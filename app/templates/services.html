@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Pagamentos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="dashboard active" id="dashboard">
+  <div class="dashboard-header">
+    <h1>Controle de Pagamentos</h1>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button class="btn-save" id="saveButton">Salvar Alterações</button>
+      <a href="{{ url_for('main.logout') }}" class="btn-logout">Sair</a>
+      <div id="alertBox" style="margin-left:10px;"></div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+    <input type="date" id="startDate" placeholder="Data Início">
+    <input type="date" id="endDate" placeholder="Data Fim">
+    <select id="statusFilter">
+      <option value="">Todos Status</option>
+      <option value="Sim">Sim</option>
+      <option value="Não">Não</option>
+      <option value="Cancelado">Cancelado</option>
+    </select>
+    <input type="text" id="employeeFilter" placeholder="Filtrar Funcionário">
+    <input type="text" id="customerFilter" placeholder="Filtrar Cliente">
+  </div>
+
+  <div class="loading" id="loading">Carregando dados...</div>
+
+  <table id="dataTable" style="display:none;">
+    <thead>
+      <tr>
+        <th data-field="order_id">Order ID</th>
+        <th data-field="employees">Funcionário</th>
+        <th data-field="customer_name">Cliente</th>
+        <th data-field="schedule_date">Data Agendada</th>
+        <th data-field="space_name">Espaço</th>
+        <th data-field="service_name">Serviço</th>
+        <th data-field="stay_external">Externo</th>
+        <th data-field="service_status">Status</th>
+        <th data-field="gross_total">Total Bruto</th>
+        <th data-field="PGTO">PGTO</th>
+        <th data-field="DATPGTO">Data Pagamento</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
