@@ -11,17 +11,12 @@ def login():
         password = request.form.get("senha")
         if not user or not password:
             return render_template("login.html", error="Por favor, preencha todos os campos")
-
-        print("user enviado:", user)
-        print("password enviado:", password)
-
         # Autenticação básica no Supabase (tabela usuarios)
         result = supabase.table("credential").select("*").eq("email", user).eq("senha", password).execute()
-        print("Resultado da consulta:", result.data)
 
         if result.data:
-            session["email"] = user
-            return redirect(url_for("main.deashboard"))
+            session["user"] = user
+            return redirect(url_for("main.dashboard"))
         else:
             return render_template("login.html", error="Usuário ou senha inválidos")
 
