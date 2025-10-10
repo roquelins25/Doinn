@@ -39,11 +39,12 @@ def get_services():
 @main.route("/api/services/update", methods=["PUT"])
 def update_services():
     updates = request.get_json()
+
     for row in updates:
         supabase.table("services").update({
             "PGTO": row["PGTO"],
             "DATPGTO": row["DATPGTO"]
-        }).eq("id", row["id"]).execute()
+        }).eq("order_id", row.get("order_id")).execute()
     return jsonify({"message": "Atualizações salvas com sucesso"})
 
 # --- Logout ---
