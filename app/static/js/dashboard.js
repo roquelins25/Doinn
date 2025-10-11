@@ -169,20 +169,24 @@ function setupSorting() {
   });
 }
 
-// --- Editar linha ---
+
 function setupEditButtons() {
   document.querySelectorAll(".btn-edit").forEach(btn => {
     btn.addEventListener("click", () => {
-      const index = btn.dataset.index;
-      const select = document.querySelector(`select[data-index="${index}"]`);
-      const dateInput = document.querySelector(`input[data-index="${index}"]`);
       const tr = btn.closest("tr");
+      const select = tr.querySelector("select[name='PGTO']");
+      const dateInput = tr.querySelector("input[name='DATPGTO']");
+      const index = select.dataset.index;
 
+      console.log(`Botão clicado na linha ${index}`);
+
+      // Alterna entre modo edição e bloqueado
       if (select.disabled) {
         select.disabled = false;
         dateInput.disabled = false;
         tr.classList.add("modified");
-        btn.textContent = "Cancelar";
+        btn.textContent = "Bloquear";
+        console.log(`Linha ${index} habilitada`);
       } else {
         select.disabled = true;
         dateInput.disabled = true;
@@ -194,18 +198,26 @@ function setupEditButtons() {
         dateInput.value = originalData[index].DATPGTO || "";
         tableData[index].PGTO = originalData[index].PGTO;
         tableData[index].DATPGTO = originalData[index].DATPGTO;
+        console.log(`Linha ${index} revertida`);
       }
     });
   });
 
-  // Capturar alterações
+  // Captura alterações em tempo real
   document.querySelectorAll("select[name='PGTO'], input[name='DATPGTO']").forEach(el => {
     el.addEventListener("change", e => {
       const index = e.target.dataset.index;
-      tableData[index][e.target.name] = e.target.value;
+      const name = e.target.name;
+      const value = e.target.value;
+
+      // Atualiza dados em memória
+      tableData[index][name] = value;
+      console.log(`Alteração detectada na linha ${index}: ${name} = ${value}`);
     });
   });
 }
+
+
 
 // --- Salvar alterações ---
 saveButton.addEventListener("click", async () => {
@@ -214,9 +226,13 @@ saveButton.addEventListener("click", async () => {
     saveButton.textContent = "Salvando...";
     alertBox.innerHTML = "";
 
-    const modifiedRows = tableData.filter((row, i) =>
-      row.PGTO !== originalData[i].PGTO || row.DATPGTO !== originalData[i].DATPGTO
-    );
+const modifiedRows = tableData
+  .filter((row, i) => row.PGTO !== originalData[i].PGTO || row.DATPGTO !== originalData[i].DATPGTO)
+  .map(row => ({
+      order_id: row.order_id,
+      PGTO: row.PGTO,
+      DATPGTO: row.DATPGTO
+  }));
 
     if (modifiedRows.length === 0) {
       showAlert("Nenhuma alteração para salvar.", "error");
