@@ -1,4 +1,4 @@
-// dashboard.js — versão debugada e adaptada para Flask
+// --- dashboard.js (versão otimizada com filtros e paginação no servidor) ---
 
 // --- Elementos principais ---
 const table = document.getElementById("dataTable");
@@ -23,8 +23,7 @@ let tableData = [];
 let originalData = [];
 let currentPage = 1;
 const rowsPerPage = 30;
-let sortField = null;
-let sortOrder = 1; // 1 = asc, -1 = desc
+let totalRecords = 0;
 
 // --- Funções utilitárias ---
 function showAlert(message, type = "error") {
@@ -32,71 +31,54 @@ function showAlert(message, type = "error") {
   setTimeout(() => (alertBox.innerHTML = ""), 4000);
 }
 
-// --- Carregar dados ---
-async function loadData() {
+// --- Carregar dados do servidor ---
+async function loadData(page = 1) {
   try {
+    loading.style.display = "block";
+    table.style.display = "none";
+    saveButton.style.display = "none";
     loading.textContent = "Carregando dados...";
-    const response = await fetch(API_URL);
-    const data = await response.json();
 
-    if (!Array.isArray(data) || data.length === 0) {
+    const params = new URLSearchParams({
+      page,
+      limit: rowsPerPage,
+      start_date: startDateInput.value || "",
+      end_date: endDateInput.value || "",
+      status: statusFilter.value || "",
+      employee: employeeFilter.value || "",
+      customer: customerFilter.value || "",
+    });
+
+    const response = await fetch(`${API_URL}?${params.toString()}`);
+    const result = await response.json();
+
+    if (!result.data || result.data.length === 0) {
       loading.textContent = "Nenhum dado encontrado.";
       return;
     }
 
-    tableData = JSON.parse(JSON.stringify(data));
-    originalData = JSON.parse(JSON.stringify(data));
+    tableData = result.data;
+    originalData = JSON.parse(JSON.stringify(result.data));
+    totalRecords = result.total || tableData.length;
 
     renderTable();
-    setupFilters();
-    setupSorting();
+    renderPagination();
 
     loading.style.display = "none";
     table.style.display = "table";
     saveButton.style.display = "block";
   } catch (err) {
-    console.error("Erro ao carregar dados:", err);
+    console.error("❌ Erro ao carregar dados:", err);
     loading.textContent = "Erro ao carregar dados.";
   }
 }
 
-// --- Renderizar tabela com filtros, ordenação e paginação ---
+// --- Renderizar tabela ---
 function renderTable() {
   tbody.innerHTML = "";
 
-  let filteredData = applyFilters();
-
-  // Ordenação
-  if (sortField) {
-    filteredData.sort((a, b) => {
-      let valA = a[sortField];
-      let valB = b[sortField];
-
-      if (sortField.includes("date")) {
-        valA = new Date(valA || "1970-01-01");
-        valB = new Date(valB || "1970-01-01");
-      }
-
-      if (typeof valA === "string") valA = valA.toLowerCase();
-      if (typeof valB === "string") valB = valB.toLowerCase();
-
-      if (valA > valB) return 1 * sortOrder;
-      if (valA < valB) return -1 * sortOrder;
-      return 0;
-    });
-  }
-
-  // Paginação
-  const totalRows = filteredData.length;
-  const totalPages = Math.ceil(totalRows / rowsPerPage);
-  const start = (currentPage - 1) * rowsPerPage;
-  const end = start + rowsPerPage;
-  const pageData = filteredData.slice(start, end);
-
-  pageData.forEach((row, index) => {
+  tableData.forEach((row) => {
     const tr = document.createElement("tr");
-    const globalIndex = tableData.findIndex(r => r.id === row.id);
-
     tr.innerHTML = `
       <td>${row.order_id || "-"}</td>
       <td>${row.employees || "-"}</td>
@@ -108,116 +90,107 @@ function renderTable() {
       <td>${row.service_status || "-"}</td>
       <td>${row.gross_total || "-"}</td>
       <td>
-        <select data-index="${globalIndex}" name="PGTO" disabled>
+        <select data-id="${row.order_id}" name="PGTO" disabled>
           <option value="">Selecione</option>
           <option value="Sim" ${row.PGTO === "Sim" ? "selected" : ""}>Sim</option>
           <option value="Não" ${row.PGTO === "Não" ? "selected" : ""}>Não</option>
           <option value="Cancelado" ${row.PGTO === "Cancelado" ? "selected" : ""}>Cancelado</option>
         </select>
       </td>
-      <td><input type="date" data-index="${globalIndex}" name="DATPGTO" value="${row.DATPGTO || ""}" disabled></td>
-      <td><button class="btn-edit" data-index="${globalIndex}">Editar</button></td>
+      <td><input type="date" data-id="${row.order_id}" name="DATPGTO" value="${row.DATPGTO || ""}" disabled></td>
+      <td><button class="btn-edit" data-id="${row.order_id}">Editar</button></td>
     `;
     tbody.appendChild(tr);
   });
 
   setupEditButtons();
-  setupPaginationButtons(totalPages);
+}
+
+// --- Paginação ---
+function renderPagination() {
+  pagination.innerHTML = "";
+  const totalPages = Math.ceil(totalRecords / rowsPerPage);
+
+  const prevBtn = document.createElement("button");
+  prevBtn.textContent = "Anterior";
+  prevBtn.disabled = currentPage === 1;
+  prevBtn.addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage--;
+      loadData(currentPage);
+    }
+  });
+
+  const nextBtn = document.createElement("button");
+  nextBtn.textContent = "Próximo";
+  nextBtn.disabled = currentPage === totalPages;
+  nextBtn.addEventListener("click", () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      loadData(currentPage);
+    }
+  });
+
+  const pageInfo = document.createElement("span");
+  pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+
+  pagination.appendChild(prevBtn);
+  pagination.appendChild(pageInfo);
+  pagination.appendChild(nextBtn);
 }
 
 // --- Filtros ---
-function setupFilters() {
-  [startDateInput, endDateInput, statusFilter, employeeFilter, customerFilter].forEach(el => {
-    el.addEventListener("input", () => {
-      currentPage = 1;
-      renderTable();
-    });
+[startDateInput, endDateInput, statusFilter, employeeFilter, customerFilter].forEach(el => {
+  el.addEventListener("input", () => {
+    currentPage = 1;
+    loadData(1);
   });
-}
+});
 
-function applyFilters() {
-  return tableData.filter(row => {
-    const start = startDateInput.value;
-    const end = endDateInput.value;
-    const status = statusFilter.value;
-    const emp = employeeFilter.value.toLowerCase();
-    const cust = customerFilter.value.toLowerCase();
-
-    let keep = true;
-    if (start && row.schedule_date < start) keep = false;
-    if (end && row.schedule_date > end) keep = false;
-    if (status && row.PGTO !== status) keep = false;
-    if (emp && !(row.employees || "").toLowerCase().includes(emp)) keep = false;
-    if (cust && !(row.customer_name || "").toLowerCase().includes(cust)) keep = false;
-
-    return keep;
-  });
-}
-
-// --- Ordenação ---
-function setupSorting() {
-  document.querySelectorAll("th[data-field]").forEach(th => {
-    th.addEventListener("click", () => {
-      if (sortField === th.dataset.field) {
-        sortOrder *= -1;
-      } else {
-        sortField = th.dataset.field;
-        sortOrder = 1;
-      }
-      renderTable();
-    });
-  });
-}
-
-
+// --- Edição ---
 function setupEditButtons() {
   document.querySelectorAll(".btn-edit").forEach(btn => {
     btn.addEventListener("click", () => {
       const tr = btn.closest("tr");
       const select = tr.querySelector("select[name='PGTO']");
       const dateInput = tr.querySelector("input[name='DATPGTO']");
-      const index = select.dataset.index;
+      const orderId = btn.dataset.id;
 
-      console.log(`Botão clicado na linha ${index}`);
-
-      // Alterna entre modo edição e bloqueado
       if (select.disabled) {
         select.disabled = false;
         dateInput.disabled = false;
         tr.classList.add("modified");
         btn.textContent = "Bloquear";
-        console.log(`Linha ${index} habilitada`);
       } else {
         select.disabled = true;
         dateInput.disabled = true;
         tr.classList.remove("modified");
         btn.textContent = "Editar";
 
-        // Reverter valores originais
-        select.value = originalData[index].PGTO || "";
-        dateInput.value = originalData[index].DATPGTO || "";
-        tableData[index].PGTO = originalData[index].PGTO;
-        tableData[index].DATPGTO = originalData[index].DATPGTO;
-        console.log(`Linha ${index} revertida`);
+        const original = originalData.find(r => r.order_id === orderId);
+        if (original) {
+          select.value = original.PGTO || "";
+          dateInput.value = original.DATPGTO || "";
+          const row = tableData.find(r => r.order_id === orderId);
+          if (row) {
+            row.PGTO = original.PGTO;
+            row.DATPGTO = original.DATPGTO;
+          }
+        }
       }
     });
   });
 
-  // Captura alterações em tempo real
   document.querySelectorAll("select[name='PGTO'], input[name='DATPGTO']").forEach(el => {
     el.addEventListener("change", e => {
-      const index = e.target.dataset.index;
+      const id = e.target.dataset.id;
       const name = e.target.name;
       const value = e.target.value;
-
-      // Atualiza dados em memória
-      tableData[index][name] = value;
-      console.log(`Alteração detectada na linha ${index}: ${name} = ${value}`);
+      const row = tableData.find(r => r.order_id === id);
+      if (row) row[name] = value;
     });
   });
 }
-
-
 
 // --- Salvar alterações ---
 saveButton.addEventListener("click", async () => {
@@ -226,13 +199,17 @@ saveButton.addEventListener("click", async () => {
     saveButton.textContent = "Salvando...";
     alertBox.innerHTML = "";
 
-const modifiedRows = tableData
-  .filter((row, i) => row.PGTO !== originalData[i].PGTO || row.DATPGTO !== originalData[i].DATPGTO)
-  .map(row => ({
+    const modifiedRows = tableData.filter(row => {
+      const original = originalData.find(r => r.order_id === row.order_id);
+      return (
+        row.PGTO !== original.PGTO ||
+        row.DATPGTO !== original.DATPGTO
+      );
+    }).map(row => ({
       order_id: row.order_id,
       PGTO: row.PGTO,
       DATPGTO: row.DATPGTO
-  }));
+    }));
 
     if (modifiedRows.length === 0) {
       showAlert("Nenhuma alteração para salvar.", "error");
@@ -247,11 +224,13 @@ const modifiedRows = tableData
 
     if (!response.ok) throw new Error("Falha ao salvar dados.");
 
+    const result = await response.json();
     showAlert("Alterações salvas com sucesso!", "success");
+
     originalData = JSON.parse(JSON.stringify(tableData));
-    renderTable();
+    loadData(currentPage);
   } catch (err) {
-    console.error("Erro ao salvar:", err);
+    console.error("❌ Erro ao salvar:", err);
     showAlert("Erro ao salvar alterações.", "error");
   } finally {
     saveButton.disabled = false;
@@ -259,33 +238,5 @@ const modifiedRows = tableData
   }
 });
 
-// --- Paginação ---
-function setupPaginationButtons(totalPages) {
-  pagination.innerHTML = "";
-
-  const prevBtn = document.createElement("button");
-  prevBtn.textContent = "Anterior";
-  prevBtn.disabled = currentPage === 1;
-  prevBtn.addEventListener("click", () => {
-    currentPage--;
-    renderTable();
-  });
-
-  const nextBtn = document.createElement("button");
-  nextBtn.textContent = "Próximo";
-  nextBtn.disabled = currentPage === totalPages;
-  nextBtn.addEventListener("click", () => {
-    currentPage++;
-    renderTable();
-  });
-
-  const pageInfo = document.createElement("span");
-  pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
-
-  pagination.appendChild(prevBtn);
-  pagination.appendChild(pageInfo);
-  pagination.appendChild(nextBtn);
-}
-
 // --- Inicialização ---
-document.addEventListener("DOMContentLoaded", loadData);
+document.addEventListener("DOMContentLoaded", () => loadData(1));
