@@ -1,4 +1,3 @@
-// --- dashboard.js (versão otimizada com filtros e paginação no servidor) ---
 
 // --- Elementos principais ---
 const table = document.getElementById("dataTable");

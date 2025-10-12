@@ -1,31 +1,88 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login - Dashboard Pagamentos</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#13a4ec",
+            "background-light": "#f6f7f8",
+            "background-dark": "#101c22",
+            "foreground-light": "#111827",
+            "foreground-dark": "#f9fafb",
+            "input-light": "#e5e7eb",
+            "input-dark": "#1f2937",
+            "placeholder-light": "#6b7280",
+            "placeholder-dark": "#9ca3af",
+          },
+          fontFamily: {
+            display: ["Inter", "Noto Sans", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
 </head>
-<body>
-<div class="container">
-  <div class="login-form">
-    <h1>Bem-vindo</h1>
-    <p>Entre com suas credenciais</p>
-    {% if error %}
-      <div class="alert alert-error">{{ error }}</div>
-    {% endif %}
-    <form action="{{ url_for('main.login') }}" method="POST">
-      <div class="form-group">
-        <label for="email">Usuário</label>
-        <input type="text" id="email" name="email" required>
+
+<body class="bg-background-light dark:bg-background-dark font-display text-foreground-light dark:text-foreground-dark">
+  <div class="flex flex-col items-center justify-center min-h-screen">
+    <div class="w-full max-w-md p-8 space-y-8 bg-white dark:bg-background-dark rounded-xl shadow-lg">
+      <div class="text-center">
+        <div class="flex justify-center mb-4">
+          <svg class="h-10 w-10 text-primary" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" fill="currentColor"></path>
+          </svg>
+        </div>
+        <h1 class="text-3xl font-bold text-foreground-light dark:text-foreground-dark">Bem-vindo</h1>
+        <p class="mt-2 text-sm text-placeholder-light dark:text-placeholder-dark">Entre com suas credenciais</p>
       </div>
-      <div class="form-group">
-        <label for="senha">Senha</label>
-        <input type="password" id="senha" name="senha" required>
-      </div>
-      <button type="submit" class="btn-login">Entrar</button>
-    </form>
+
+      <!-- Mensagem de erro do Flask -->
+      {% if error %}
+        <div class="text-center text-sm text-red-500">{{ error }}</div>
+      {% endif %}
+
+      <form action="{{ url_for('main.login') }}" method="POST" class="space-y-6">
+        <div>
+          <label class="sr-only" for="email">Usuário</label>
+          <input
+            type="text"
+            id="email"
+            name="email"
+            placeholder="Usuário"
+            required
+            class="form-input w-full px-4 py-3 rounded-lg bg-input-light dark:bg-input-dark text-foreground-light dark:text-foreground-dark border-transparent focus:ring-2 focus:ring-primary focus:border-transparent placeholder-placeholder-light dark:placeholder-placeholder-dark"
+          />
+        </div>
+
+        <div>
+          <label class="sr-only" for="senha">Senha</label>
+          <input
+            type="password"
+            id="senha"
+            name="senha"
+            placeholder="Senha"
+            required
+            class="form-input w-full px-4 py-3 rounded-lg bg-input-light dark:bg-input-dark text-foreground-light dark:text-foreground-dark border-transparent focus:ring-2 focus:ring-primary focus:border-transparent placeholder-placeholder-light dark:placeholder-placeholder-dark"
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+        >
+          Entrar
+        </button>
+      </form>
+    </div>
   </div>
-</div>
 </body>
 </html>
