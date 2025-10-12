@@ -13,7 +13,6 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/custom-dashboard.css') }}">
 
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-
   <script>
     tailwind.config = {
       darkMode: "class",
@@ -34,38 +33,12 @@
     };
   </script>
 
-  <!-- Seu CSS original -->
+  <!-- CSS principal -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom-dashboard.css') }}">
+  
+  <!-- CSS específico (somente o necessário) -->
   <style>
-    /* 🔹 Responsividade e truncagem */
-    #dataTable td, #dataTable th {
-      font-size: 13px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 180px;
-    }
-
-    #dataTable td:hover {
-      background-color: rgba(19, 164, 236, 0.05);
-      cursor: help;
-    }
-
-    @media (max-width: 1024px) {
-      #dataTable td, #dataTable th {
-        font-size: 12px;
-        max-width: 140px;
-      }
-    }
-
-    @media (max-width: 768px) {
-      #dataTable td, #dataTable th {
-        font-size: 11px;
-        max-width: 120px;
-      }
-    }
-
     /* 🔹 Tooltip nativo */
     #dataTable td[title]:hover::after {
       content: attr(title);
@@ -81,21 +54,7 @@
       max-width: 300px;
     }
 
-    /* 🔹 Badges */
-    .badge {
-      display: inline-block;
-      padding: 0.25rem 0.5rem;
-      border-radius: 9999px;
-      font-size: 11px;
-      font-weight: 600;
-      text-align: center;
-    }
-    .badge-paid { background: #dcfce7; color: #166534; }
-    .badge-pending { background: #fef9c3; color: #854d0e; }
-    .badge-canceled { background: #fee2e2; color: #991b1b; }
-    .badge-confirmed { background: #dbeafe; color: #1e40af; }
-
-    /* 🔹 Botões */
+    /* 🔹 Botões de ação */
     .btn-action {
       background: #13a4ec;
       color: white;
@@ -105,13 +64,8 @@
       padding: 4px 10px;
       transition: 0.2s;
     }
-    .btn-action:hover { background: #0f8dc9; }
-
-    /* 🔹 Rolagem horizontal */
-    .table-container::-webkit-scrollbar { height: 8px; }
-    .table-container::-webkit-scrollbar-thumb {
-      background-color: rgba(100, 100, 100, 0.3);
-      border-radius: 10px;
+    .btn-action:hover {
+      background: #0f8dc9;
     }
   </style>
 </head>
@@ -170,6 +124,9 @@
           <table id="dataTable" class="w-full text-sm text-left hidden">
             <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
               <tr>
+                <th class="px-4 py-3 text-center">Ações</th>
+                <th class="px-4 py-3">Status Pagamento</th>
+                <th class="px-4 py-3">Data Pagamento</th>
                 <th class="px-4 py-3">Order ID</th>
                 <th class="px-4 py-3">Funcionário</th>
                 <th class="px-4 py-3">Cliente</th>
@@ -179,9 +136,6 @@
                 <th class="px-4 py-3">Externo</th>
                 <th class="px-4 py-3">Status</th>
                 <th class="px-4 py-3 text-right">Total Bruto</th>
-                <th class="px-4 py-3">Status Pagamento</th>
-                <th class="px-4 py-3">Data Pagamento</th>
-                <th class="px-4 py-3 text-center">Ações</th>
               </tr>
             </thead>
             <tbody id="tableBody"></tbody>
@@ -216,7 +170,6 @@
       });
       observer.observe(document.getElementById("tableBody"), { childList: true, subtree: true });
     });
-    </script>
-    
+  </script>
 </body>
 </html>

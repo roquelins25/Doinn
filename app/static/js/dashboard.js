@@ -79,6 +79,16 @@ function renderTable() {
   tableData.forEach((row) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
+    <td><button class="btn-edit" data-id="${row.order_id}">Editar</button></td>
+    <td>
+      <select data-id="${row.order_id}" name="PGTO" disabled>
+        <option value="">Selecione</option>
+        <option value="Sim" ${row.PGTO === "Sim" ? "selected" : ""}>Sim</option>
+        <option value="Não" ${row.PGTO === "Não" ? "selected" : ""}>Não</option>
+        <option value="Cancelado" ${row.PGTO === "Cancelado" ? "selected" : ""}>Cancelado</option>
+      </select>
+    </td>
+    <td><input type="date" data-id="${row.order_id}" name="DATPGTO" value="${row.DATPGTO || ""}" disabled></td>
       <td>${row.order_id || "-"}</td>
       <td>${row.employees || "-"}</td>
       <td>${row.customer_name || "-"}</td>
@@ -88,16 +98,6 @@ function renderTable() {
       <td>${row.stay_external || "-"}</td>
       <td>${row.service_status || "-"}</td>
       <td>${row.gross_total || "-"}</td>
-      <td>
-        <select data-id="${row.order_id}" name="PGTO" disabled>
-          <option value="">Selecione</option>
-          <option value="Sim" ${row.PGTO === "Sim" ? "selected" : ""}>Sim</option>
-          <option value="Não" ${row.PGTO === "Não" ? "selected" : ""}>Não</option>
-          <option value="Cancelado" ${row.PGTO === "Cancelado" ? "selected" : ""}>Cancelado</option>
-        </select>
-      </td>
-      <td><input type="date" data-id="${row.order_id}" name="DATPGTO" value="${row.DATPGTO || ""}" disabled></td>
-      <td><button class="btn-edit" data-id="${row.order_id}">Editar</button></td>
     `;
     tbody.appendChild(tr);
   });
