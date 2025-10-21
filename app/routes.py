@@ -45,7 +45,7 @@ def get_services():
     end_date = request.args.get("end_date")
     status = request.args.get("status")
     employee = request.args.get("employee")
-    customer = request.args.get("customer")
+    service = request.args.get("service")
 
     query = supabase.table("services").select("*")
 
@@ -65,8 +65,8 @@ def get_services():
 
     if employee:
         query = query.ilike("employees", f"%{employee}%")
-    if customer:
-        query = query.ilike("customer_name", f"%{customer}%")
+    if service:
+        query = query.ilike("service_name", f"%{service}%")
 
     data_result = query.range(offset, offset + limit - 1).execute()
 
@@ -87,8 +87,8 @@ def get_services():
                 count_query = count_query.eq("PGTO", status)
         if employee:
             count_query = count_query.ilike("employees", f"%{employee}%")
-        if customer:
-            count_query = count_query.ilike("customer_name", f"%{customer}%")
+        if service:
+            count_query = count_query.ilike("service_name", f"%{service}%")
         total = getattr(count_query.execute(), "count", len(data_result.data))
     except Exception:
         total = len(data_result.data)

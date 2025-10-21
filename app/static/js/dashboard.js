@@ -1,4 +1,3 @@
-
 // --- Elementos principais ---
 const table = document.getElementById("dataTable");
 const tbody = document.getElementById("tableBody");
@@ -10,7 +9,7 @@ const startDateInput = document.getElementById("startDate");
 const endDateInput = document.getElementById("endDate");
 const statusFilter = document.getElementById("statusFilter");
 const employeeFilter = document.getElementById("employeeFilter");
-const customerFilter = document.getElementById("customerFilter");
+const serviceFilter = document.getElementById("serviceFilter");
 const pagination = document.getElementById("pagination");
 
 // --- Endpoints Flask ---
@@ -26,7 +25,9 @@ let totalRecords = 0;
 
 // --- Funções utilitárias ---
 function showAlert(message, type = "error") {
-  alertBox.innerHTML = `<div class="${type === "error" ? "error" : "success"}">${message}</div>`;
+  alertBox.innerHTML = `<div class="${
+    type === "error" ? "error" : "success"
+  }">${message}</div>`;
   setTimeout(() => (alertBox.innerHTML = ""), 4000);
 }
 
@@ -45,7 +46,7 @@ async function loadData(page = 1) {
       end_date: endDateInput.value || "",
       status: statusFilter.value || "",
       employee: employeeFilter.value || "",
-      customer: customerFilter.value || "",
+      service: serviceFilter.value || "",
     });
 
     const response = await fetch(`${API_URL}?${params.toString()}`);
@@ -85,19 +86,22 @@ function renderTable() {
         <option value="">Selecione</option>
         <option value="Sim" ${row.PGTO === "Sim" ? "selected" : ""}>Sim</option>
         <option value="Não" ${row.PGTO === "Não" ? "selected" : ""}>Não</option>
-        <option value="Cancelado" ${row.PGTO === "Cancelado" ? "selected" : ""}>Cancelado</option>
+        <option value="Cancelado" ${
+          row.PGTO === "Cancelado" ? "selected" : ""
+        }>Cancelado</option>
       </select>
     </td>
-    <td><input type="date" data-id="${row.order_id}" name="DATPGTO" value="${row.DATPGTO || ""}" disabled></td>
+    <td><input type="date" data-id="${row.order_id}" name="DATPGTO" value="${
+      row.DATPGTO || ""
+    }" disabled></td>
       <td>${row.order_id || "-"}</td>
+      <td>${row.gross_total || "-"}</td>
       <td>${row.employees || "-"}</td>
-      <td>${row.customer_name || "-"}</td>
       <td>${row.schedule_date || "-"}</td>
       <td>${row.space_name || "-"}</td>
       <td>${row.service_name || "-"}</td>
       <td>${row.stay_external || "-"}</td>
       <td>${row.service_status || "-"}</td>
-      <td>${row.gross_total || "-"}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -139,7 +143,13 @@ function renderPagination() {
 }
 
 // --- Filtros ---
-[startDateInput, endDateInput, statusFilter, employeeFilter, customerFilter].forEach(el => {
+[
+  startDateInput,
+  endDateInput,
+  statusFilter,
+  employeeFilter,
+  serviceFilter,
+].forEach((el) => {
   el.addEventListener("input", () => {
     currentPage = 1;
     loadData(1);
@@ -148,7 +158,7 @@ function renderPagination() {
 
 // --- Edição ---
 function setupEditButtons() {
-  document.querySelectorAll(".btn-edit").forEach(btn => {
+  document.querySelectorAll(".btn-edit").forEach((btn) => {
     btn.addEventListener("click", () => {
       const tr = btn.closest("tr");
       const select = tr.querySelector("select[name='PGTO']");
@@ -166,11 +176,11 @@ function setupEditButtons() {
         tr.classList.remove("modified");
         btn.textContent = "Editar";
 
-        const original = originalData.find(r => r.order_id === orderId);
+        const original = originalData.find((r) => r.order_id === orderId);
         if (original) {
           select.value = original.PGTO || "";
           dateInput.value = original.DATPGTO || "";
-          const row = tableData.find(r => r.order_id === orderId);
+          const row = tableData.find((r) => r.order_id === orderId);
           if (row) {
             row.PGTO = original.PGTO;
             row.DATPGTO = original.DATPGTO;
@@ -180,15 +190,17 @@ function setupEditButtons() {
     });
   });
 
-  document.querySelectorAll("select[name='PGTO'], input[name='DATPGTO']").forEach(el => {
-    el.addEventListener("change", e => {
-      const id = e.target.dataset.id;
-      const name = e.target.name;
-      const value = e.target.value;
-      const row = tableData.find(r => r.order_id === id);
-      if (row) row[name] = value;
+  document
+    .querySelectorAll("select[name='PGTO'], input[name='DATPGTO']")
+    .forEach((el) => {
+      el.addEventListener("change", (e) => {
+        const id = e.target.dataset.id;
+        const name = e.target.name;
+        const value = e.target.value;
+        const row = tableData.find((r) => r.order_id === id);
+        if (row) row[name] = value;
+      });
     });
-  });
 }
 
 // --- Salvar alterações ---
@@ -198,17 +210,16 @@ saveButton.addEventListener("click", async () => {
     saveButton.textContent = "Salvando...";
     alertBox.innerHTML = "";
 
-    const modifiedRows = tableData.filter(row => {
-      const original = originalData.find(r => r.order_id === row.order_id);
-      return (
-        row.PGTO !== original.PGTO ||
-        row.DATPGTO !== original.DATPGTO
-      );
-    }).map(row => ({
-      order_id: row.order_id,
-      PGTO: row.PGTO,
-      DATPGTO: row.DATPGTO
-    }));
+    const modifiedRows = tableData
+      .filter((row) => {
+        const original = originalData.find((r) => r.order_id === row.order_id);
+        return row.PGTO !== original.PGTO || row.DATPGTO !== original.DATPGTO;
+      })
+      .map((row) => ({
+        order_id: row.order_id,
+        PGTO: row.PGTO,
+        DATPGTO: row.DATPGTO,
+      }));
 
     if (modifiedRows.length === 0) {
       showAlert("Nenhuma alteração para salvar.", "error");
@@ -218,7 +229,7 @@ saveButton.addEventListener("click", async () => {
     const response = await fetch(SAVE_URL, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(modifiedRows)
+      body: JSON.stringify(modifiedRows),
     });
 
     if (!response.ok) throw new Error("Falha ao salvar dados.");
