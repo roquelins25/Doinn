@@ -179,8 +179,8 @@
                   <th class="px-4 py-3 text-center">Ações</th>
                   <th class="px-4 py-3">Status Pagamento</th>
                   <th class="px-4 py-3">Data Pagamento</th>
-                  <th class="px-4 py-3 text-right">Total Bruto</th>
                   <th class="px-4 py-3">Order ID</th>
+                  <th class="px-4 py-3 text-right">Total Bruto</th>
                   <th class="px-4 py-3">Funcionário</th>
                   <th class="px-4 py-3">Data Agendada</th>
                   <th class="px-4 py-3">Espaço</th>
@@ -201,29 +201,6 @@
 
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const observer = new MutationObserver(() => {
-          document.querySelectorAll("#dataTable td").forEach((td) => {
-            const text = td.textContent.trim();
-            td.setAttribute("title", text);
 
-            const lower = text.toLowerCase();
-            if (["sim", "pago", "paid"].includes(lower))
-              td.innerHTML = `<span class="badge badge-paid">${text}</span>`;
-            else if (["pendente", "não", "pending"].includes(lower))
-              td.innerHTML = `<span class="badge badge-pending">${text}</span>`;
-            else if (["cancelado", "canceled"].includes(lower))
-              td.innerHTML = `<span class="badge badge-canceled">${text}</span>`;
-            else if (["confirmado", "confirmed"].includes(lower))
-              td.innerHTML = `<span class="badge badge-confirmed">${text}</span>`;
-          });
-        });
-        observer.observe(document.getElementById("tableBody"), {
-          childList: true,
-          subtree: true,
-        });
-      });
-    </script>
   </body>
 </html>

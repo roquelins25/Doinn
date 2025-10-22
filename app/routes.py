@@ -47,54 +47,48 @@ def get_services():
     employee = request.args.get("employee")
     service = request.args.get("service")
 
-    query = supabase.table("services").select("*")
+    # 1. Construir a consulta para os DADOS (sem count() na seleção)
+    data_query = supabase.table("services").select("order_id, PGTO, DATPGTO, gross_total, employees, schedule_date, space_name, service_name, stay_external, service_status")
 
+    # 2. Construir a consulta para a CONTAGEM TOTAL (apenas count())
+    count_query = supabase.table("services").select("*", count="exact")
+
+    # Aplicar os mesmos filtros a AMBAS as consultas
     if start_date:
-        query = query.gte("schedule_date", start_date)
+        data_query = data_query.gte("schedule_date", start_date)
+        count_query = count_query.gte("schedule_date", start_date)
     if end_date:
-        query = query.lte("schedule_date", end_date)
+        data_query = data_query.lte("schedule_date", end_date)
+        count_query = count_query.lte("schedule_date", end_date)
 
     if status:
         if status == "Pendente":
-            try:
-                query = query.or_("PGTO.is.null,PGTO.eq.''")
-            except Exception:
-                pass
+            # A cláusula .or_ precisa ser construída cuidadosamente para PostgREST
+            data_query = data_query.or_("PGTO.is.null,PGTO.eq.\\'\\'", group="and")
+            count_query = count_query.or_("PGTO.is.null,PGTO.eq.\\'\\'", group="and")
         else:
-            query = query.eq("PGTO", status)
+            data_query = data_query.eq("PGTO", status)
+            count_query = count_query.eq("PGTO", status)
 
     if employee:
-        query = query.ilike("employees", f"%{employee}%")
+        data_query = data_query.ilike("employees", f"%{employee}%")
+        count_query = count_query.ilike("employees", f"%{employee}%")
     if service:
-        query = query.ilike("service_name", f"%{service}%")
+        data_query = data_query.ilike("service_name", f"%{service}%")
+        count_query = count_query.ilike("service_name", f"%{service}%")
 
-    data_result = query.range(offset, offset + limit - 1).execute()
 
-    # Total de registros filtrados
-    try:
-        count_query = supabase.table("services").select("order_id", count="exact")
-        if start_date:
-            count_query = count_query.gte("schedule_date", start_date)
-        if end_date:
-            count_query = count_query.lte("schedule_date", end_date)
-        if status:
-            if status == "Pendente":
-                try:
-                    count_query = count_query.or_("PGTO.is.null,PGTO.eq.''")
-                except Exception:
-                    pass
-            else:
-                count_query = count_query.eq("PGTO", status)
-        if employee:
-            count_query = count_query.ilike("employees", f"%{employee}%")
-        if service:
-            count_query = count_query.ilike("service_name", f"%{service}%")
-        total = getattr(count_query.execute(), "count", len(data_result.data))
-    except Exception:
-        total = len(data_result.data)
+    # Executa a consulta de dados com paginação
+    data_result = data_query.range(offset, offset + limit - 1).execute()
+    data = data_result.data
+
+
+    # Executa a consulta de contagem separadamente
+    total_count_result = count_query.execute()
+    total = total_count_result.count or 0
 
     return jsonify({
-        "data": data_result.data or [],
+        "data": data or [],
         "total": total
     })
 

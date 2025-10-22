@@ -75,38 +75,91 @@ async function loadData(page = 1) {
 
 // --- Renderizar tabela ---
 function renderTable() {
-  tbody.innerHTML = "";
+  const fragment = document.createDocumentFragment();
 
   tableData.forEach((row) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-    <td><button class="btn-edit" data-id="${row.order_id}">Editar</button></td>
-    <td>
-      <select data-id="${row.order_id}" name="PGTO" disabled>
-        <option value="">Selecione</option>
-        <option value="Sim" ${row.PGTO === "Sim" ? "selected" : ""}>Sim</option>
-        <option value="Não" ${row.PGTO === "Não" ? "selected" : ""}>Não</option>
-        <option value="Cancelado" ${
-          row.PGTO === "Cancelado" ? "selected" : ""
-        }>Cancelado</option>
-      </select>
-    </td>
-    <td><input type="date" data-id="${row.order_id}" name="DATPGTO" value="${
-      row.DATPGTO || ""
-    }" disabled></td>
-      <td>${row.order_id || "-"}</td>
-      <td>${row.gross_total || "-"}</td>
-      <td>${row.employees || "-"}</td>
-      <td>${row.schedule_date || "-"}</td>
-      <td>${row.space_name || "-"}</td>
-      <td>${row.service_name || "-"}</td>
-      <td>${row.stay_external || "-"}</td>
-      <td>${row.service_status || "-"}</td>
+
+    // Célula de Ações
+    const actionsTd = document.createElement("td");
+    actionsTd.innerHTML = `<button class="btn-edit" data-id="${row.order_id}">Editar</button>`;
+    actionsTd.classList.add("px-4", "py-3", "text-center");
+    tr.appendChild(actionsTd);
+
+    // Célula de Status Pagamento
+    const pgtoTd = document.createElement("td");
+    const pgtoSelect = document.createElement("select");
+    pgtoSelect.setAttribute("data-id", row.order_id);
+    pgtoSelect.setAttribute("name", "PGTO");
+    pgtoSelect.disabled = true;
+    pgtoSelect.innerHTML = `
+      <option value="">Selecione</option>
+      <option value="Sim" ${row.PGTO === "Sim" ? "selected" : ""}>Sim</option>
+      <option value="Não" ${row.PGTO === "Não" ? "selected" : ""}>Não</option>
+      <option value="Cancelado" ${row.PGTO === "Cancelado" ? "selected" : ""}>Cancelado</option>
+      <option value="Pendente" ${row.PGTO === "Pendente" || (!row.PGTO && row.PGTO !== 'Não' && row.PGTO !== 'Sim' && row.PGTO !== 'Cancelado') ? "selected" : ""}>Pendente</option>
     `;
-    tbody.appendChild(tr);
+    pgtoTd.appendChild(pgtoSelect);
+    pgtoTd.classList.add("px-4", "py-3");
+    tr.appendChild(pgtoTd);
+
+    // Célula de Data Pagamento
+    const datpgtoTd = document.createElement("td");
+    const datpgtoInput = document.createElement("input");
+    datpgtoInput.setAttribute("type", "date");
+    datpgtoInput.setAttribute("data-id", row.order_id);
+    datpgtoInput.setAttribute("name", "DATPGTO");
+    datpgtoInput.value = row.DATPGTO || "";
+    datpgtoInput.disabled = true;
+    datpgtoTd.appendChild(datpgtoInput);
+    datpgtoTd.classList.add("px-4", "py-3");
+    tr.appendChild(datpgtoTd);
+
+    // Outras células de dados, aplicando a lógica de badge/title
+    const dataCells = [
+      { key: "order_id", class: "text-right" },
+      { key: "gross_total", class: "text-right" },
+      { key: "employees" },
+      { key: "schedule_date" },
+      { key: "space_name" },
+      { key: "service_name" },
+      { key: "stay_external" },
+      { key: "service_status" },
+    ];
+
+    dataCells.forEach(cellInfo => {
+      const td = document.createElement("td");
+      const text = row[cellInfo.key] || "-";
+      td.setAttribute("title", text);
+      td.classList.add("px-4", "py-3");
+      if (cellInfo.class) td.classList.add(cellInfo.class);
+
+      let badgeClass = "";
+      const lower = String(text).toLowerCase();
+      if (["sim", "pago", "paid"].includes(lower))
+        badgeClass = "badge-paid";
+      else if (["pendente", "não", "pending"].includes(lower))
+        badgeClass = "badge-pending";
+      else if (["cancelado", "canceled"].includes(lower))
+        badgeClass = "badge-canceled";
+      else if (["confirmado", "confirmed"].includes(lower))
+        badgeClass = "badge-confirmed";
+
+      if (badgeClass) {
+        td.innerHTML = `<span class="badge ${badgeClass}">${text}</span>`;
+      } else {
+        td.textContent = text;
+      }
+      tr.appendChild(td);
+    });
+
+    fragment.appendChild(tr);
   });
 
-  setupEditButtons();
+  tbody.innerHTML = "";
+  tbody.appendChild(fragment);
+
+  // setupEditButtons(); // Será substituído por delegação de eventos
 }
 
 // --- Paginação ---
@@ -157,51 +210,7 @@ function renderPagination() {
 });
 
 // --- Edição ---
-function setupEditButtons() {
-  document.querySelectorAll(".btn-edit").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const tr = btn.closest("tr");
-      const select = tr.querySelector("select[name='PGTO']");
-      const dateInput = tr.querySelector("input[name='DATPGTO']");
-      const orderId = btn.dataset.id;
 
-      if (select.disabled) {
-        select.disabled = false;
-        dateInput.disabled = false;
-        tr.classList.add("modified");
-        btn.textContent = "Bloquear";
-      } else {
-        select.disabled = true;
-        dateInput.disabled = true;
-        tr.classList.remove("modified");
-        btn.textContent = "Editar";
-
-        const original = originalData.find((r) => r.order_id === orderId);
-        if (original) {
-          select.value = original.PGTO || "";
-          dateInput.value = original.DATPGTO || "";
-          const row = tableData.find((r) => r.order_id === orderId);
-          if (row) {
-            row.PGTO = original.PGTO;
-            row.DATPGTO = original.DATPGTO;
-          }
-        }
-      }
-    });
-  });
-
-  document
-    .querySelectorAll("select[name='PGTO'], input[name='DATPGTO']")
-    .forEach((el) => {
-      el.addEventListener("change", (e) => {
-        const id = e.target.dataset.id;
-        const name = e.target.name;
-        const value = e.target.value;
-        const row = tableData.find((r) => r.order_id === id);
-        if (row) row[name] = value;
-      });
-    });
-}
 
 // --- Salvar alterações ---
 saveButton.addEventListener("click", async () => {
@@ -249,4 +258,51 @@ saveButton.addEventListener("click", async () => {
 });
 
 // --- Inicialização ---
-document.addEventListener("DOMContentLoaded", () => loadData(1));
+document.addEventListener("DOMContentLoaded", () => {
+  loadData(1);
+
+  // Delegação de eventos para botões de edição
+  tbody.addEventListener("click", (e) => {
+    if (e.target.classList.contains("btn-edit")) {
+      const btn = e.target;
+      const tr = btn.closest("tr");
+      const select = tr.querySelector("select[name=\'PGTO\']");
+      const dateInput = tr.querySelector("input[name=\'DATPGTO\']");
+      const orderId = btn.dataset.id;
+
+      if (select.disabled) {
+        select.disabled = false;
+        dateInput.disabled = false;
+        tr.classList.add("modified");
+        btn.textContent = "Bloquear";
+      } else {
+        select.disabled = true;
+        dateInput.disabled = true;
+        tr.classList.remove("modified");
+        btn.textContent = "Editar";
+
+        const original = originalData.find((r) => r.order_id === orderId);
+        if (original) {
+          select.value = original.PGTO || "";
+          dateInput.value = original.DATPGTO || "";
+          const row = tableData.find((r) => r.order_id === orderId);
+          if (row) {
+            row.PGTO = original.PGTO;
+            row.DATPGTO = original.DATPGTO;
+          }
+        }
+      }
+    }
+  });
+
+  // Delegação de eventos para selects e inputs de data
+  tbody.addEventListener("change", (e) => {
+    if (e.target.matches("select[name=\'PGTO\'], input[name=\'DATPGTO\']")) {
+      const id = e.target.dataset.id;
+      const name = e.target.name;
+      const value = e.target.value;
+      const row = tableData.find((r) => r.order_id === id);
+      if (row) row[name] = value;
+    }
+  });
+});
