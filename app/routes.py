@@ -3,6 +3,24 @@ from .models.sup_client import supabase
 
 main = Blueprint("main", __name__)
 
+# --- Função auxiliar para aplicar filtros ---
+def apply_filters(query, start_date=None, end_date=None, status=None, employee=None, service=None):
+    """Aplica filtros opcionais a uma consulta Supabase."""
+    if start_date:
+        query = query.gte("schedule_date", start_date)
+    if end_date:
+        query = query.lte("schedule_date", end_date)
+    if status:
+        if status == "Pendente":
+            query = query.or_("PGTO.is.null,PGTO.eq.\\'\\'")
+        else:
+            query = query.eq("PGTO", status)
+    if employee:
+        query = query.ilike("employees", f"%{employee}%")
+    if service:
+        query = query.ilike("service_name", f"%{service}%")
+    return query
+
 # --- Página de login ---
 @main.route("/", methods=["GET", "POST"])
 def login():
@@ -11,6 +29,7 @@ def login():
         password = request.form.get("senha")
         if not user or not password:
             return render_template("login.html", error="Por favor, preencha todos os campos")
+
         # Autenticação básica no Supabase (tabela credential)
         result = supabase.table("credential") \
             .select("*") \
@@ -47,50 +66,23 @@ def get_services():
     employee = request.args.get("employee")
     service = request.args.get("service")
 
-    # 1. Construir a consulta para os DADOS (sem count() na seleção)
-    data_query = supabase.table("services").select("order_id, PGTO, DATPGTO, gross_total, employees, schedule_date, space_name, service_name, stay_external, service_status")
+    # Consulta de dados
+    data_query = supabase.table("services").select(
+        "order_id, PGTO, DATPGTO, gross_total, employees, schedule_date, space_name, service_name, stay_external, service_status"
+    )
+    data_query = apply_filters(data_query, start_date, end_date, status, employee, service)
 
-    # 2. Construir a consulta para a CONTAGEM TOTAL (apenas count())
+    # Consulta de contagem
     count_query = supabase.table("services").select("*", count="exact")
+    count_query = apply_filters(count_query, start_date, end_date, status, employee, service)
 
-    # Aplicar os mesmos filtros a AMBAS as consultas
-    if start_date:
-        data_query = data_query.gte("schedule_date", start_date)
-        count_query = count_query.gte("schedule_date", start_date)
-    if end_date:
-        data_query = data_query.lte("schedule_date", end_date)
-        count_query = count_query.lte("schedule_date", end_date)
-
-    if status:
-        if status == "Pendente":
-            # A cláusula .or_ precisa ser construída cuidadosamente para PostgREST
-            data_query = data_query.or_("PGTO.is.null,PGTO.eq.\\'\\'", group="and")
-            count_query = count_query.or_("PGTO.is.null,PGTO.eq.\\'\\'", group="and")
-        else:
-            data_query = data_query.eq("PGTO", status)
-            count_query = count_query.eq("PGTO", status)
-
-    if employee:
-        data_query = data_query.ilike("employees", f"%{employee}%")
-        count_query = count_query.ilike("employees", f"%{employee}%")
-    if service:
-        data_query = data_query.ilike("service_name", f"%{service}%")
-        count_query = count_query.ilike("service_name", f"%{service}%")
-
-
-    # Executa a consulta de dados com paginação
     data_result = data_query.range(offset, offset + limit - 1).execute()
-    data = data_result.data
+    data = data_result.data or []
 
-
-    # Executa a consulta de contagem separadamente
     total_count_result = count_query.execute()
-    total = total_count_result.count or 0
+    total = total_count_result.count or len(data)
 
-    return jsonify({
-        "data": data or [],
-        "total": total
-    })
+    return jsonify({"data": data, "total": total})
 
 
 # --- API: atualizar dados ---
@@ -123,6 +115,32 @@ def update_services():
         resp["errors"] = errors
 
     return jsonify(resp)
+
+
+@main.route("/api/totais", methods=["GET"])
+def get_totals():
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    status = request.args.get("status")
+    employee = request.args.get("employee")
+    service = request.args.get("service")
+
+    try:
+        query = supabase.table("services").select("gross_total", count="exact")
+        query = apply_filters(query, start_date, end_date, status, employee, service)
+
+        result = query.execute()
+        data = result.data or []
+
+        total_bruto = sum(float(row.get("gross_total") or 0) for row in data)
+        total_count = result.count or len(data)
+
+        return jsonify({
+            "gross_total_sum": total_bruto,
+            "services_count": total_count
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # --- Logout ---

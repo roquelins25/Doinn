@@ -15,6 +15,7 @@ const pagination = document.getElementById("pagination");
 // --- Endpoints Flask ---
 const API_URL = "/api/services";
 const SAVE_URL = "/api/services/update";
+const TOTALS_URL = "/api/totais"; // 🔹 Novo endpoint para os cards de totais
 
 // --- Variáveis globais ---
 let tableData = [];
@@ -31,8 +32,45 @@ function showAlert(message, type = "error") {
   setTimeout(() => (alertBox.innerHTML = ""), 4000);
 }
 
+// --- Carregar totais do servidor (com filtros aplicados) ---
+async function loadTotals() {
+  try {
+    const params = new URLSearchParams({
+      start_date: startDateInput.value || "",
+      end_date: endDateInput.value || "",
+      status: statusFilter.value || "",
+      employee: employeeFilter.value || "",
+      service: serviceFilter.value || "",
+    });
+
+    const response = await fetch(`/api/totais?${params.toString()}`);
+    const result = await response.json();
+
+    if (!response.ok) throw new Error(result.message || "Erro ao buscar totais.");
+
+    const totalBrutoEl = document.getElementById("totalBruto");
+    const quantidadeRegistrosEl = document.getElementById("quantidadeRegistros");
+
+    const totalBruto = Number(result.gross_total_sum || 0);
+    const quantidade = Number(result.services_count || 0);
+
+    // Formatar valor em moeda brasileira
+    const formatado = totalBruto.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+
+    totalBrutoEl.textContent = formatado;
+    quantidadeRegistrosEl.textContent = quantidade.toLocaleString("pt-BR");
+  } catch (err) {
+    console.error("❌ Erro ao carregar totais:", err);
+  }
+}
+
 // --- Carregar dados do servidor ---
 async function loadData(page = 1) {
+  console.log(`🔄 Carregando dados da página ${page}...`);
+
   try {
     loading.style.display = "block";
     table.style.display = "none";
@@ -49,17 +87,24 @@ async function loadData(page = 1) {
       service: serviceFilter.value || "",
     });
 
+    console.log("📦 Enviando parâmetros:", Object.fromEntries(params));
+
     const response = await fetch(`${API_URL}?${params.toString()}`);
     const result = await response.json();
 
+    if (!response.ok) throw new Error(result.message || "Erro na resposta do servidor.");
+
     if (!result.data || result.data.length === 0) {
       loading.textContent = "Nenhum dado encontrado.";
+      console.warn("⚠️ Nenhum dado retornado da API.");
       return;
     }
 
     tableData = result.data;
     originalData = JSON.parse(JSON.stringify(result.data));
     totalRecords = result.total || tableData.length;
+
+    console.log(`✅ ${tableData.length} registros carregados.`);
 
     renderTable();
     renderPagination();
@@ -75,6 +120,7 @@ async function loadData(page = 1) {
 
 // --- Renderizar tabela ---
 function renderTable() {
+  console.log("🧱 Renderizando tabela...");
   const fragment = document.createDocumentFragment();
 
   tableData.forEach((row) => {
@@ -115,7 +161,7 @@ function renderTable() {
     datpgtoTd.classList.add("px-4", "py-3");
     tr.appendChild(datpgtoTd);
 
-    // Outras células de dados, aplicando a lógica de badge/title
+    // Outras células
     const dataCells = [
       { key: "order_id", class: "text-right" },
       { key: "gross_total", class: "text-right" },
@@ -127,7 +173,7 @@ function renderTable() {
       { key: "service_status" },
     ];
 
-    dataCells.forEach(cellInfo => {
+    dataCells.forEach((cellInfo) => {
       const td = document.createElement("td");
       const text = row[cellInfo.key] || "-";
       td.setAttribute("title", text);
@@ -158,8 +204,7 @@ function renderTable() {
 
   tbody.innerHTML = "";
   tbody.appendChild(fragment);
-
-  // setupEditButtons(); // Será substituído por delegação de eventos
+  console.log("✅ Tabela renderizada com sucesso.");
 }
 
 // --- Paginação ---
@@ -206,10 +251,9 @@ function renderPagination() {
   el.addEventListener("input", () => {
     currentPage = 1;
     loadData(1);
+    loadTotals(); // 🔹 Atualiza os totais junto com os dados filtrados
   });
 });
-
-// --- Edição ---
 
 
 // --- Salvar alterações ---
@@ -232,8 +276,11 @@ saveButton.addEventListener("click", async () => {
 
     if (modifiedRows.length === 0) {
       showAlert("Nenhuma alteração para salvar.", "error");
+      console.warn("⚠️ Nenhuma linha modificada.");
       return;
     }
+
+    console.log("📤 Enviando alterações:", modifiedRows);
 
     const response = await fetch(SAVE_URL, {
       method: "PUT",
@@ -244,10 +291,12 @@ saveButton.addEventListener("click", async () => {
     if (!response.ok) throw new Error("Falha ao salvar dados.");
 
     const result = await response.json();
+    console.log("✅ Alterações salvas:", result);
     showAlert("Alterações salvas com sucesso!", "success");
 
     originalData = JSON.parse(JSON.stringify(tableData));
     loadData(currentPage);
+    loadTotals(); // 🔹 Atualiza os totais após salvar
   } catch (err) {
     console.error("❌ Erro ao salvar:", err);
     showAlert("Erro ao salvar alterações.", "error");
@@ -259,15 +308,17 @@ saveButton.addEventListener("click", async () => {
 
 // --- Inicialização ---
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("🚀 Dashboard iniciado...");
   loadData(1);
+  loadTotals(); // 🔹 Carrega os totais ao abrir a página
 
   // Delegação de eventos para botões de edição
   tbody.addEventListener("click", (e) => {
     if (e.target.classList.contains("btn-edit")) {
       const btn = e.target;
       const tr = btn.closest("tr");
-      const select = tr.querySelector("select[name=\'PGTO\']");
-      const dateInput = tr.querySelector("input[name=\'DATPGTO\']");
+      const select = tr.querySelector("select[name='PGTO']");
+      const dateInput = tr.querySelector("input[name='DATPGTO']");
       const orderId = btn.dataset.id;
 
       if (select.disabled) {
@@ -275,6 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
         dateInput.disabled = false;
         tr.classList.add("modified");
         btn.textContent = "Bloquear";
+        console.log(`✏️ Linha ${orderId} desbloqueada para edição`);
       } else {
         select.disabled = true;
         dateInput.disabled = true;
@@ -291,18 +343,23 @@ document.addEventListener("DOMContentLoaded", () => {
             row.DATPGTO = original.DATPGTO;
           }
         }
+
+        console.log(`🔒 Linha ${orderId} bloqueada e restaurada.`);
       }
     }
   });
 
   // Delegação de eventos para selects e inputs de data
   tbody.addEventListener("change", (e) => {
-    if (e.target.matches("select[name=\'PGTO\'], input[name=\'DATPGTO\']")) {
+    if (e.target.matches("select[name='PGTO'], input[name='DATPGTO']")) {
       const id = e.target.dataset.id;
       const name = e.target.name;
       const value = e.target.value;
       const row = tableData.find((r) => r.order_id === id);
-      if (row) row[name] = value;
+      if (row) {
+        row[name] = value;
+        console.log(`✏️ Campo alterado: ${name} = ${value} (ID: ${id})`);
+      }
     }
   });
 });

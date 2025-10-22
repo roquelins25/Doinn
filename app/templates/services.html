@@ -118,6 +118,7 @@
 
       <!-- Main -->
       <main class="flex-grow p-6 lg:p-10">
+        
         <div class="max-w-7xl mx-auto dashboard active" id="dashboard">
           <!-- Filtros -->
           <div
@@ -166,6 +167,53 @@
           >
             Carregando dados...
           </div>
+
+          <!-- Cards de Totais -->
+          <div
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-6"
+            id="cardsTotais"
+          >
+            <!-- Card Total Bruto -->
+            <div
+              class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-center justify-between"
+            >
+              <div>
+                <p class="text-gray-500 text-sm font-medium">Total Bruto</p>
+                <h2
+                  id="totalBruto"
+                  class="text-2xl font-bold text-gray-900 dark:text-white"
+                >
+                  R$ 0,00
+                </h2>
+              </div>
+              <span
+                class="material-symbols-outlined text-primary text-4xl bg-primary/10 p-3 rounded-full"
+              >
+                payments
+              </span>
+            </div>
+
+            <!-- Card Quantidade de Registros -->
+            <div
+              class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-center justify-between"
+            >
+              <div>
+                <p class="text-gray-500 text-sm font-medium">Quantidade de Registros</p>
+                <h2
+                  id="quantidadeRegistros"
+                  class="text-2xl font-bold text-gray-900 dark:text-white"
+                >
+                  0
+                </h2>
+              </div>
+              <span
+                class="material-symbols-outlined text-success text-4xl bg-success/10 p-3 rounded-full"
+              >
+                checklist
+              </span>
+            </div>
+          </div>
+
 
           <!-- Tabela -->
           <div
