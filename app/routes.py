@@ -69,7 +69,7 @@ def get_services():
     # Consulta de dados
     data_query = supabase.table("services").select(
         "order_id, PGTO, DATPGTO, gross_total, employees, schedule_date, space_name, service_name, stay_external, service_status"
-    )
+    ).gt("gross_total", 0)
     data_query = apply_filters(data_query, start_date, end_date, status, employee, service)
 
     # Consulta de contagem
