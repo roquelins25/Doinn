@@ -23,12 +23,12 @@ let originalData = [];
 let currentPage = 1;
 const rowsPerPage = 30;
 let totalRecords = 0;
+let sortColumn = "schedule_date"; // 🔹 Padrão inicial
+let sortDirection = "asc"; // 🔹 Padrão inicial
 
 // --- Funções utilitárias ---
 function showAlert(message, type = "error") {
-  alertBox.innerHTML = `<div class="${
-    type === "error" ? "error" : "success"
-  }">${message}</div>`;
+  alertBox.innerHTML = `<div class="${type === "error" ? "error" : "success"}">${message}</div>`;
   setTimeout(() => (alertBox.innerHTML = ""), 4000);
 }
 
@@ -45,7 +45,6 @@ async function loadTotals() {
 
     const response = await fetch(`/api/totais?${params.toString()}`);
     const result = await response.json();
-
     if (!response.ok) throw new Error(result.message || "Erro ao buscar totais.");
 
     const totalBrutoEl = document.getElementById("totalBruto");
@@ -54,13 +53,10 @@ async function loadTotals() {
     const totalBruto = Number(result.gross_total_sum || 0);
     const quantidade = Number(result.services_count || 0);
 
-    // Formatar valor em moeda brasileira
-    const formatado = totalBruto.toLocaleString("pt-BR", {
+    totalBrutoEl.textContent = totalBruto.toLocaleString("pt-BR", {
       style: "currency",
       currency: "BRL",
     });
-
-    totalBrutoEl.textContent = formatado;
     quantidadeRegistrosEl.textContent = quantidade.toLocaleString("pt-BR");
   } catch (err) {
     console.error("❌ Erro ao carregar totais:", err);
@@ -85,6 +81,8 @@ async function loadData(page = 1) {
       status: statusFilter.value || "",
       employee: employeeFilter.value || "",
       service: serviceFilter.value || "",
+      order_by: sortColumn, // 🔹 Envia ordenação para API
+      order_dir: sortDirection,
     });
 
     console.log("📦 Enviando parâmetros:", Object.fromEntries(params));
@@ -108,6 +106,7 @@ async function loadData(page = 1) {
 
     renderTable();
     renderPagination();
+    updateSortIcons(); // 🔹 Atualiza ícones de ordenação
 
     loading.style.display = "none";
     table.style.display = "table";
@@ -191,11 +190,9 @@ function renderTable() {
       else if (["confirmado", "confirmed"].includes(lower))
         badgeClass = "badge-confirmed";
 
-      if (badgeClass) {
-        td.innerHTML = `<span class="badge ${badgeClass}">${text}</span>`;
-      } else {
-        td.textContent = text;
-      }
+      if (badgeClass) td.innerHTML = `<span class="badge ${badgeClass}">${text}</span>`;
+      else td.textContent = text;
+
       tr.appendChild(td);
     });
 
@@ -240,21 +237,24 @@ function renderPagination() {
   pagination.appendChild(nextBtn);
 }
 
+// --- Atualizar ícones de ordenação ---
+function updateSortIcons() {
+  document.querySelectorAll("#dataTable thead th").forEach((th) => {
+    th.classList.remove("sorted-asc", "sorted-desc");
+    if (th.dataset.column === sortColumn) {
+      th.classList.add(sortDirection === "asc" ? "sorted-asc" : "sorted-desc");
+    }
+  });
+}
+
 // --- Filtros ---
-[
-  startDateInput,
-  endDateInput,
-  statusFilter,
-  employeeFilter,
-  serviceFilter,
-].forEach((el) => {
+[startDateInput, endDateInput, statusFilter, employeeFilter, serviceFilter].forEach((el) => {
   el.addEventListener("input", () => {
     currentPage = 1;
     loadData(1);
-    loadTotals(); // 🔹 Atualiza os totais junto com os dados filtrados
+    loadTotals();
   });
 });
-
 
 // --- Salvar alterações ---
 saveButton.addEventListener("click", async () => {
@@ -296,7 +296,7 @@ saveButton.addEventListener("click", async () => {
 
     originalData = JSON.parse(JSON.stringify(tableData));
     loadData(currentPage);
-    loadTotals(); // 🔹 Atualiza os totais após salvar
+    loadTotals();
   } catch (err) {
     console.error("❌ Erro ao salvar:", err);
     showAlert("Erro ao salvar alterações.", "error");
@@ -310,7 +310,28 @@ saveButton.addEventListener("click", async () => {
 document.addEventListener("DOMContentLoaded", () => {
   console.log("🚀 Dashboard iniciado...");
   loadData(1);
-  loadTotals(); // 🔹 Carrega os totais ao abrir a página
+  loadTotals();
+
+  // 🔹 Ordenação clicando nos cabeçalhos
+  document.querySelectorAll("#dataTable thead th").forEach((th) => {
+    th.style.cursor = "pointer";
+    th.addEventListener("click", () => {
+      const column = th.dataset.column;
+      if (!column) return;
+
+      // Alterna direção ou define nova coluna
+      if (sortColumn === column) {
+        sortDirection = sortDirection === "asc" ? "desc" : "asc";
+      } else {
+        sortColumn = column;
+        sortDirection = "asc";
+      }
+
+      console.log(`🔀 Ordenando por ${sortColumn} (${sortDirection})`);
+      currentPage = 1;
+      loadData(currentPage);
+    });
+  });
 
   // Delegação de eventos para botões de edição
   tbody.addEventListener("click", (e) => {
@@ -326,7 +347,6 @@ document.addEventListener("DOMContentLoaded", () => {
         dateInput.disabled = false;
         tr.classList.add("modified");
         btn.textContent = "Bloquear";
-        console.log(`✏️ Linha ${orderId} desbloqueada para edição`);
       } else {
         select.disabled = true;
         dateInput.disabled = true;
@@ -343,8 +363,6 @@ document.addEventListener("DOMContentLoaded", () => {
             row.DATPGTO = original.DATPGTO;
           }
         }
-
-        console.log(`🔒 Linha ${orderId} bloqueada e restaurada.`);
       }
     }
   });

@@ -66,23 +66,52 @@ def get_services():
     employee = request.args.get("employee")
     service = request.args.get("service")
 
-    # Consulta de dados
+    # 🔹 Parâmetros de ordenação
+    order_by = request.args.get("order_by", "schedule_date")
+    order_dir = request.args.get("order_dir", "asc").lower()
+
+    # 🔹 Validação de coluna permitida (segurança contra SQL injection)
+    allowed_columns = {
+        "order_id", "PGTO", "DATPGTO", "gross_total",
+        "employees", "schedule_date", "space_name",
+        "service_name", "stay_external", "service_status"
+    }
+    if order_by not in allowed_columns:
+        order_by = "schedule_date"
+
+    desc_order = order_dir == "desc"
+
+    # --- Consulta principal ---
     data_query = supabase.table("services").select(
-        "order_id, PGTO, DATPGTO, gross_total, employees, schedule_date, space_name, service_name, stay_external, service_status"
+        "order_id, PGTO, DATPGTO, gross_total, employees, schedule_date, "
+        "space_name, service_name, stay_external, service_status"
     )
     data_query = apply_filters(data_query, start_date, end_date, status, employee, service)
 
-    # Consulta de contagem
+    # 🔹 Ignorar registros sem valor bruto
+    data_query = data_query.neq("gross_total", 0).not_.is_("gross_total", None)
+
+    # 🔹 Aplicar ordenação
+    data_query = data_query.order(order_by, desc=desc_order)
+
+    # --- Consulta de contagem ---
     count_query = supabase.table("services").select("*", count="exact")
     count_query = apply_filters(count_query, start_date, end_date, status, employee, service)
+    count_query = count_query.neq("gross_total", 0).not_.is_("gross_total", None)
 
+    # --- Execução ---
     data_result = data_query.range(offset, offset + limit - 1).execute()
     data = data_result.data or []
 
     total_count_result = count_query.execute()
     total = total_count_result.count or len(data)
 
-    return jsonify({"data": data, "total": total})
+    return jsonify({
+        "data": data,
+        "total": total,
+        "order_by": order_by,
+        "order_dir": order_dir
+    })
 
 
 # --- API: atualizar dados ---
