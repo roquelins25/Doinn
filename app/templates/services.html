@@ -118,8 +118,7 @@
 
       <!-- Main -->
       <main class="flex-grow p-6 lg:p-10">
-        
-        <div class="max-w-7xl mx-auto dashboard active" id="dashboard">
+        <div class="mx-auto dashboard active" id="dashboard">
           <!-- Filtros -->
           <div
             class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6 overflow-x-auto"
@@ -168,53 +167,6 @@
             Carregando dados...
           </div>
 
-          <!-- Cards de Totais -->
-          <div
-            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-6"
-            id="cardsTotais"
-          >
-            <!-- Card Total Bruto -->
-            <div
-              class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-center justify-between"
-            >
-              <div>
-                <p class="text-gray-500 text-sm font-medium">Total Bruto</p>
-                <h2
-                  id="totalBruto"
-                  class="text-2xl font-bold text-gray-900 dark:text-white"
-                >
-                  R$ 0,00
-                </h2>
-              </div>
-              <span
-                class="material-symbols-outlined text-primary text-4xl bg-primary/10 p-3 rounded-full"
-              >
-                payments
-              </span>
-            </div>
-
-            <!-- Card Quantidade de Registros -->
-            <div
-              class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-center justify-between"
-            >
-              <div>
-                <p class="text-gray-500 text-sm font-medium">Quantidade de Registros</p>
-                <h2
-                  id="quantidadeRegistros"
-                  class="text-2xl font-bold text-gray-900 dark:text-white"
-                >
-                  0
-                </h2>
-              </div>
-              <span
-                class="material-symbols-outlined text-success text-4xl bg-success/10 p-3 rounded-full"
-              >
-                checklist
-              </span>
-            </div>
-          </div>
-
-
           <!-- Tabela -->
           <div
             class="table-container bg-white dark:bg-gray-800 rounded-lg shadow"
@@ -249,6 +201,29 @@
 
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const observer = new MutationObserver(() => {
+          document.querySelectorAll("#dataTable td").forEach((td) => {
+            const text = td.textContent.trim();
+            td.setAttribute("title", text);
 
+            const lower = text.toLowerCase();
+            if (["sim", "pago", "paid"].includes(lower))
+              td.innerHTML = `<span class="badge badge-paid">${text}</span>`;
+            else if (["pendente", "não", "pending"].includes(lower))
+              td.innerHTML = `<span class="badge badge-pending">${text}</span>`;
+            else if (["cancelado", "canceled"].includes(lower))
+              td.innerHTML = `<span class="badge badge-canceled">${text}</span>`;
+            else if (["confirmado", "confirmed"].includes(lower))
+              td.innerHTML = `<span class="badge badge-confirmed">${text}</span>`;
+          });
+        });
+        observer.observe(document.getElementById("tableBody"), {
+          childList: true,
+          subtree: true,
+        });
+      });
+    </script>
   </body>
 </html>
