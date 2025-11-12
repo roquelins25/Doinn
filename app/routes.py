@@ -76,13 +76,18 @@ def get_services():
     count_query = supabase.table("services").select("*", count="exact")
     count_query = apply_filters(count_query, start_date, end_date, status, employee, service)
 
-    data_result = data_query.range(offset, offset + limit - 1).execute()
-    data = data_result.data or []
+    try:
+        data_result = data_query.range(offset, offset + limit - 1).execute()
+        data = data_result.data or []
 
-    total_count_result = count_query.execute()
-    total = total_count_result.count or len(data)
+        total_count_result = count_query.execute()
+        total = total_count_result.count or len(data)
 
-    return jsonify({"data": data, "total": total})
+        return jsonify({"data": data, "total": total})
+    except Exception as e:
+        # Captura erros de conexão/leitura do httpx/postgrest
+        print(f"Erro ao buscar dados do Supabase: {e}")
+        return jsonify({"error": "Erro ao conectar com o banco de dados. Tente novamente mais tarde."}), 500
 
 
 # --- API: atualizar dados ---
@@ -140,7 +145,9 @@ def get_totals():
             "services_count": total_count
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Captura erros de conexão/leitura do httpx/postgrest
+        print(f"Erro ao buscar totais do Supabase: {e}")
+        return jsonify({"error": "Erro ao conectar com o banco de dados. Tente novamente mais tarde."}), 500
 
 
 # --- Logout ---
@@ -148,3 +155,33 @@ def get_totals():
 def logout():
     session.clear()
     return redirect(url_for("main.login"))
+
+@main.route("/imprimir_relatorio")
+def imprimir():
+    # Captura os filtros da querystring
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    status = request.args.get("status")
+    employee = request.args.get("employee")
+    service = request.args.get("service")
+
+    # Consulta no Supabase
+    # Nota: A consulta de impressão deve buscar todos os dados filtrados, sem limite de página.
+    query = supabase.table("services").select(
+        "employees, service_name, space_name, schedule_date, gross_total, PGTO"
+    ).gt("gross_total", 0)
+    query = apply_filters(query, start_date, end_date, status, employee, service)
+
+    # A consulta de impressão deve buscar todos os dados filtrados, sem limite de página.
+    # O Supabase tem um limite padrão de 1000 linhas, mas para este caso, vamos buscar o máximo
+    # que a API permitiria sem paginação explícita, confiando que o volume de dados filtrados
+    # para impressão não será excessivo.
+    result = query.execute()
+    pagamentos = result.data or []
+
+    # Calcular o total bruto dos pagamentos filtrados
+    total_bruto = sum(float(row.get("gross_total") or 0) for row in pagamentos)
+
+    # Renderiza o HTML com os dados e o total
+    return render_template("imprimir.html", pagamentos=pagamentos, total_bruto=total_bruto)
+

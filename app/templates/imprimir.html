@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Controle de Pagamentos</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/custom-dashboard.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/Imprimir.css') }}"
+    />
+  </head>
+
+  <body>
+    <div class="print-container">
+      <header>
+        <div class="cabecalho">
+          <!-- 💡 Substitua esta URL pela URL real do seu logo -->
+          <img
+            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0voHtsTYl_m8WZJfKum-fP6QvOyQ8N-NPV98bQXoWuL0hKbdA_M8_awGFiMEF023RarU&usqp=CAU"
+            alt="Logo da Empresa"
+          />
+          <div class="titulo">
+            <h1>Relatório de Pagamentos</h1>
+            <span id="dataAtual"></span>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <table>
+          <thead>
+            <tr>
+              <th>Funcionário</th>
+              <th>Serviço</th>
+              <th>Espaço</th>
+              <th>Data Agendada</th>
+              <th class="text-right">Valor Bruto</th>
+              <th>Status PGTO</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pagamento in pagamentos %}
+            <tr>
+              <td>{{ pagamento.employees }}</td>
+              <td>{{ pagamento.service_name }}</td>
+              <td>{{ pagamento.space_name }}</td>
+              <td>{{ pagamento.schedule_date }}</td>
+              <td class="text-right">
+                R$ {{ "%.2f" | format(pagamento.gross_total | float) }}
+              </td>
+              <td>{{ pagamento.PGTO }}</td>
+            </tr>
+            {% endfor %}
+            <tr class="total-row">
+              <td colspan="3" class="text-right">TOTAL BRUTO GERAL:</td>
+              <td colspan="2" class="text-right">
+                R$ {{ "%.2f" | format(total_bruto | float) }}
+              </td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Área de assinatura -->
+        <div class="assinaturas">
+          <div class="assinatura">
+            <div class="linha-assinatura"></div>
+            <p>Assinatura do Responsável</p>
+          </div>
+          <div class="assinatura">
+            <div class="linha-assinatura"></div>
+            <p>Assinatura do Funcionário</p>
+          </div>
+        </div>
+      </main>
+
+      <footer class="no-print">
+        <p>© 2024. Relatório gerado em <span id="dataAtualFooter"></span></p>
+      </footer>
+    </div>
+
+    <script>
+      const hoje = new Date();
+      const opcoes = { day: "2-digit", month: "2-digit", year: "numeric" };
+      const dataFormatada = hoje.toLocaleDateString("pt-BR", opcoes);
+      document.getElementById(
+        "dataAtual"
+      ).textContent = `Gerado em: ${dataFormatada}`;
+
+      // Adiciona a data no footer também, se existir
+      const dataAtualFooter = document.getElementById("dataAtualFooter");
+      if (dataAtualFooter) {
+        dataAtualFooter.textContent = dataFormatada;
+      }
+
+      // Dispara a impressão automaticamente após o carregamento
+      window.onload = function () {
+        window.print();
+      };
+    </script>
+  </body>
+</html>

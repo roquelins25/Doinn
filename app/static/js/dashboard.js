@@ -46,10 +46,13 @@ async function loadTotals() {
     const response = await fetch(`/api/totais?${params.toString()}`);
     const result = await response.json();
 
-    if (!response.ok) throw new Error(result.message || "Erro ao buscar totais.");
+    if (!response.ok)
+      throw new Error(result.message || "Erro ao buscar totais.");
 
     const totalBrutoEl = document.getElementById("totalBruto");
-    const quantidadeRegistrosEl = document.getElementById("quantidadeRegistros");
+    const quantidadeRegistrosEl = document.getElementById(
+      "quantidadeRegistros"
+    );
 
     const totalBruto = Number(result.gross_total_sum || 0);
     const quantidade = Number(result.services_count || 0);
@@ -92,7 +95,8 @@ async function loadData(page = 1) {
     const response = await fetch(`${API_URL}?${params.toString()}`);
     const result = await response.json();
 
-    if (!response.ok) throw new Error(result.message || "Erro na resposta do servidor.");
+    if (!response.ok)
+      throw new Error(result.message || "Erro na resposta do servidor.");
 
     if (!result.data || result.data.length === 0) {
       loading.textContent = "Nenhum dado encontrado.";
@@ -142,8 +146,18 @@ function renderTable() {
       <option value="">Selecione</option>
       <option value="Sim" ${row.PGTO === "Sim" ? "selected" : ""}>Sim</option>
       <option value="Não" ${row.PGTO === "Não" ? "selected" : ""}>Não</option>
-      <option value="Cancelado" ${row.PGTO === "Cancelado" ? "selected" : ""}>Cancelado</option>
-      <option value="Pendente" ${row.PGTO === "Pendente" || (!row.PGTO && row.PGTO !== 'Não' && row.PGTO !== 'Sim' && row.PGTO !== 'Cancelado') ? "selected" : ""}>Pendente</option>
+      <option value="Cancelado" ${
+        row.PGTO === "Cancelado" ? "selected" : ""
+      }>Cancelado</option>
+      <option value="Pendente" ${
+        row.PGTO === "Pendente" ||
+        (!row.PGTO &&
+          row.PGTO !== "Não" &&
+          row.PGTO !== "Sim" &&
+          row.PGTO !== "Cancelado")
+          ? "selected"
+          : ""
+      }>Pendente</option>
     `;
     pgtoTd.appendChild(pgtoSelect);
     pgtoTd.classList.add("px-4", "py-3");
@@ -182,8 +196,7 @@ function renderTable() {
 
       let badgeClass = "";
       const lower = String(text).toLowerCase();
-      if (["sim", "pago", "paid"].includes(lower))
-        badgeClass = "badge-paid";
+      if (["sim", "pago", "paid"].includes(lower)) badgeClass = "badge-paid";
       else if (["pendente", "não", "pending"].includes(lower))
         badgeClass = "badge-pending";
       else if (["cancelado", "canceled"].includes(lower))
@@ -255,7 +268,6 @@ function renderPagination() {
   });
 });
 
-
 // --- Salvar alterações ---
 saveButton.addEventListener("click", async () => {
   try {
@@ -305,6 +317,26 @@ saveButton.addEventListener("click", async () => {
     saveButton.textContent = "Salvar Alterações";
   }
 });
+
+// --- Botão de Impressão ---
+const printButton = document.getElementById("printButton");
+
+function handlePrint() {
+  const params = new URLSearchParams({
+    start_date: startDateInput.value || "",
+    end_date: endDateInput.value || "",
+    status: statusFilter.value || "",
+    employee: employeeFilter.value || "",
+    service: serviceFilter.value || "",
+  });
+
+  // Redireciona para a rota de impressão com os filtros como parâmetros de consulta
+  window.open(`/imprimir_relatorio?${params.toString()}`, "_blank");
+}
+
+if (printButton) {
+  printButton.addEventListener("click", handlePrint);
+}
 
 // --- Inicialização ---
 document.addEventListener("DOMContentLoaded", () => {

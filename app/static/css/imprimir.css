@@ -1,0 +1,130 @@
+/* ======== ESTILOS GERAIS ======== */
+.print-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 5px;
+}
+
+.cabecalho img {
+  max-height: 80px;
+  width: auto;
+}
+
+.titulo {
+  text-align: right;
+}
+
+.titulo h1 {
+  font-size: 1.5em;
+  margin: 0;
+}
+
+.titulo span {
+  font-size: 0.9em;
+  color: #555;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0;
+  font-size: 8px;
+  text-align: center;
+}
+
+th,
+td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  font-size: 8px;
+  text-align: center;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+}
+
+.total-row {
+  font-weight: bold;
+  background-color: #e0e0e0;
+}
+
+.total-row td {
+  border-top: 2px solid #000;
+}
+.total-row td:last-child {
+  text-align: right;
+}
+td.text-right {
+  text-align: right;
+}
+
+.assinaturas {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 180px;
+  padding-top: 20px;
+  border-top: 1px dashed #aaa;
+}
+
+.assinatura {
+  text-align: center;
+  width: 40%;
+}
+
+.linha-assinatura {
+  border-bottom: 1px solid #000;
+  margin-bottom: 5px;
+  height: 1px;
+}
+
+/* ======== ESTILOS PARA IMPRESSÃO ======== */
+@media print {
+  /* Header aparece apenas na primeira página */
+  header {
+    display: block;
+    position: relative; /* não fixo */
+    top: auto;
+    left: auto;
+    width: 100%;
+    background-color: white;
+    border-bottom: 1px solid #ccc;
+    z-index: 1000;
+  }
+
+  /* Oculta o header após a primeira página */
+  header + * {
+    page-break-before: auto;
+  }
+
+  body {
+    font-size: 8pt;
+    padding-top: 0; /* não precisa mais compensar o header fixo */
+  }
+
+  footer,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Mantém o cabeçalho da tabela repetido (se quiser) */
+  thead {
+    display: table-header-group;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+}
