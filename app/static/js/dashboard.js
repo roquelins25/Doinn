@@ -15,7 +15,7 @@ const pagination = document.getElementById("pagination");
 // --- Endpoints Flask ---
 const API_URL = "/api/services";
 const SAVE_URL = "/api/services/update";
-const TOTALS_URL = "/api/totais"; // 🔹 Novo endpoint para os cards de totais
+const TOTALS_URL = "/api/totais";
 
 // --- Variáveis globais ---
 let tableData = [];
@@ -23,8 +23,8 @@ let originalData = [];
 let currentPage = 1;
 const rowsPerPage = 30;
 let totalRecords = 0;
-let sortColumn = "schedule_date"; // 🔹 Padrão inicial
-let sortDirection = "asc"; // 🔹 Padrão inicial
+let sortColumn = "schedule_date";
+let sortDirection = "asc";
 
 // --- Funções utilitárias ---
 function showAlert(message, type = "error") {
@@ -34,7 +34,7 @@ function showAlert(message, type = "error") {
   setTimeout(() => (alertBox.innerHTML = ""), 4000);
 }
 
-// --- Carregar totais do servidor (com filtros aplicados) ---
+// --- Carregar totais ---
 async function loadTotals() {
   try {
     const params = new URLSearchParams({
@@ -48,13 +48,10 @@ async function loadTotals() {
     const response = await fetch(`/api/totais?${params.toString()}`);
     const result = await response.json();
 
-    if (!response.ok)
-      throw new Error(result.message || "Erro ao buscar totais.");
+    if (!response.ok) throw new Error(result.message || "Erro ao buscar totais.");
 
     const totalBrutoEl = document.getElementById("totalBruto");
-    const quantidadeRegistrosEl = document.getElementById(
-      "quantidadeRegistros"
-    );
+    const quantidadeRegistrosEl = document.getElementById("quantidadeRegistros");
 
     const totalBruto = Number(result.gross_total_sum || 0);
     const quantidade = Number(result.services_count || 0);
@@ -69,10 +66,8 @@ async function loadTotals() {
   }
 }
 
-// --- Carregar dados do servidor ---
+// --- Carregar dados ---
 async function loadData(page = 1) {
-  console.log(`🔄 Carregando dados da página ${page}...`);
-
   try {
     loading.style.display = "block";
     table.style.display = "none";
@@ -87,33 +82,22 @@ async function loadData(page = 1) {
       status: statusFilter.value || "",
       employee: employeeFilter.value || "",
       service: serviceFilter.value || "",
-      order_by: sortColumn, // 🔹 Envia ordenação para API
+      order_by: sortColumn,
       order_dir: sortDirection,
     });
-
-    console.log("📦 Enviando parâmetros:", Object.fromEntries(params));
 
     const response = await fetch(`${API_URL}?${params.toString()}`);
     const result = await response.json();
 
-    if (!response.ok)
-      throw new Error(result.message || "Erro na resposta do servidor.");
+    if (!response.ok) throw new Error(result.message || "Erro na resposta do servidor.");
 
-    if (!result.data || result.data.length === 0) {
-      loading.textContent = "Nenhum dado encontrado.";
-      console.warn("⚠️ Nenhum dado retornado da API.");
-      return;
-    }
-
-    tableData = result.data;
-    originalData = JSON.parse(JSON.stringify(result.data));
+    tableData = result.data || [];
+    originalData = JSON.parse(JSON.stringify(tableData));
     totalRecords = result.total || tableData.length;
-
-    console.log(`✅ ${tableData.length} registros carregados.`);
 
     renderTable();
     renderPagination();
-    updateSortIcons(); // 🔹 Atualiza ícones de ordenação
+    updateSortIcons();
 
     loading.style.display = "none";
     table.style.display = "table";
@@ -126,50 +110,41 @@ async function loadData(page = 1) {
 
 // --- Renderizar tabela ---
 function renderTable() {
-  console.log("🧱 Renderizando tabela...");
   const fragment = document.createDocumentFragment();
 
   tableData.forEach((row) => {
     const tr = document.createElement("tr");
 
-    // Célula de Ações
+    // Ações
     const actionsTd = document.createElement("td");
-    actionsTd.innerHTML = `<button class="btn-edit" data-id="${row.order_id}">Editar</button>`;
+    actionsTd.innerHTML = `<button class="btn-edit" data-id="${row.id_pk}">Editar</button>`;
     actionsTd.classList.add("px-4", "py-3", "text-center");
     tr.appendChild(actionsTd);
 
-    // Célula de Status Pagamento
+    // Status Pagamento
     const pgtoTd = document.createElement("td");
     const pgtoSelect = document.createElement("select");
-    pgtoSelect.setAttribute("data-id", row.order_id);
+    pgtoSelect.setAttribute("data-id", row.id_pk);
     pgtoSelect.setAttribute("name", "PGTO");
     pgtoSelect.disabled = true;
     pgtoSelect.innerHTML = `
       <option value="">Selecione</option>
       <option value="Sim" ${row.PGTO === "Sim" ? "selected" : ""}>Sim</option>
       <option value="Não" ${row.PGTO === "Não" ? "selected" : ""}>Não</option>
-      <option value="Cancelado" ${
-        row.PGTO === "Cancelado" ? "selected" : ""
-      }>Cancelado</option>
+      <option value="Cancelado" ${row.PGTO === "Cancelado" ? "selected" : ""}>Cancelado</option>
       <option value="Pendente" ${
-        row.PGTO === "Pendente" ||
-        (!row.PGTO &&
-          row.PGTO !== "Não" &&
-          row.PGTO !== "Sim" &&
-          row.PGTO !== "Cancelado")
-          ? "selected"
-          : ""
+        row.PGTO === "Pendente" || (!row.PGTO && !["Sim","Não","Cancelado"].includes(row.PGTO)) ? "selected" : ""
       }>Pendente</option>
     `;
     pgtoTd.appendChild(pgtoSelect);
     pgtoTd.classList.add("px-4", "py-3");
     tr.appendChild(pgtoTd);
 
-    // Célula de Data Pagamento
+    // Data Pagamento
     const datpgtoTd = document.createElement("td");
     const datpgtoInput = document.createElement("input");
     datpgtoInput.setAttribute("type", "date");
-    datpgtoInput.setAttribute("data-id", row.order_id);
+    datpgtoInput.setAttribute("data-id", row.id_pk);
     datpgtoInput.setAttribute("name", "DATPGTO");
     datpgtoInput.value = row.DATPGTO || "";
     datpgtoInput.disabled = true;
@@ -199,15 +174,11 @@ function renderTable() {
       let badgeClass = "";
       const lower = String(text).toLowerCase();
       if (["sim", "pago", "paid"].includes(lower)) badgeClass = "badge-paid";
-      else if (["pendente", "não", "pending"].includes(lower))
-        badgeClass = "badge-pending";
-      else if (["cancelado", "canceled"].includes(lower))
-        badgeClass = "badge-canceled";
-      else if (["confirmado", "confirmed"].includes(lower))
-        badgeClass = "badge-confirmed";
+      else if (["pendente", "não", "pending"].includes(lower)) badgeClass = "badge-pending";
+      else if (["cancelado", "canceled"].includes(lower)) badgeClass = "badge-canceled";
+      else if (["confirmado", "confirmed"].includes(lower)) badgeClass = "badge-confirmed";
 
-      if (badgeClass)
-        td.innerHTML = `<span class="badge ${badgeClass}">${text}</span>`;
+      if (badgeClass) td.innerHTML = `<span class="badge ${badgeClass}">${text}</span>`;
       else td.textContent = text;
 
       tr.appendChild(td);
@@ -218,7 +189,6 @@ function renderTable() {
 
   tbody.innerHTML = "";
   tbody.appendChild(fragment);
-  console.log("✅ Tabela renderizada com sucesso.");
 }
 
 // --- Paginação ---
@@ -265,13 +235,7 @@ function updateSortIcons() {
 }
 
 // --- Filtros ---
-[
-  startDateInput,
-  endDateInput,
-  statusFilter,
-  employeeFilter,
-  serviceFilter,
-].forEach((el) => {
+[startDateInput, endDateInput, statusFilter, employeeFilter, serviceFilter].forEach((el) => {
   el.addEventListener("input", () => {
     currentPage = 1;
     loadData(1);
@@ -288,22 +252,19 @@ saveButton.addEventListener("click", async () => {
 
     const modifiedRows = tableData
       .filter((row) => {
-        const original = originalData.find((r) => r.order_id === row.order_id);
+        const original = originalData.find((r) => r.id_pk === row.id_pk);
         return row.PGTO !== original.PGTO || row.DATPGTO !== original.DATPGTO;
       })
       .map((row) => ({
-        order_id: row.order_id,
+        id_pk: row.id_pk,
         PGTO: row.PGTO,
         DATPGTO: row.DATPGTO,
       }));
 
     if (modifiedRows.length === 0) {
       showAlert("Nenhuma alteração para salvar.", "error");
-      console.warn("⚠️ Nenhuma linha modificada.");
       return;
     }
-
-    console.log("📤 Enviando alterações:", modifiedRows);
 
     const response = await fetch(SAVE_URL, {
       method: "PUT",
@@ -314,7 +275,6 @@ saveButton.addEventListener("click", async () => {
     if (!response.ok) throw new Error("Falha ao salvar dados.");
 
     const result = await response.json();
-    console.log("✅ Alterações salvas:", result);
     showAlert("Alterações salvas com sucesso!", "success");
 
     originalData = JSON.parse(JSON.stringify(tableData));
@@ -331,59 +291,48 @@ saveButton.addEventListener("click", async () => {
 
 // --- Botão de Impressão ---
 const printButton = document.getElementById("printButton");
-
-function handlePrint() {
-  const params = new URLSearchParams({
-    start_date: startDateInput.value || "",
-    end_date: endDateInput.value || "",
-    status: statusFilter.value || "",
-    employee: employeeFilter.value || "",
-    service: serviceFilter.value || "",
-  });
-
-  // Redireciona para a rota de impressão com os filtros como parâmetros de consulta
-  window.open(`/imprimir_relatorio?${params.toString()}`, "_blank");
-}
-
 if (printButton) {
-  printButton.addEventListener("click", handlePrint);
+  printButton.addEventListener("click", () => {
+    const params = new URLSearchParams({
+      start_date: startDateInput.value || "",
+      end_date: endDateInput.value || "",
+      status: statusFilter.value || "",
+      employee: employeeFilter.value || "",
+      service: serviceFilter.value || "",
+    });
+
+    // Abre em uma nova aba a rota de impressão
+    window.open(`/imprimir_relatorio?${params.toString()}`, "_blank");
+  });
 }
+
 
 // --- Inicialização ---
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("🚀 Dashboard iniciado...");
   loadData(1);
   loadTotals();
 
-  // 🔹 Ordenação clicando nos cabeçalhos
+  // Ordenação por cabeçalho
   document.querySelectorAll("#dataTable thead th").forEach((th) => {
     th.style.cursor = "pointer";
     th.addEventListener("click", () => {
       const column = th.dataset.column;
       if (!column) return;
-
-      // Alterna direção ou define nova coluna
-      if (sortColumn === column) {
-        sortDirection = sortDirection === "asc" ? "desc" : "asc";
-      } else {
-        sortColumn = column;
-        sortDirection = "asc";
-      }
-
-      console.log(`🔀 Ordenando por ${sortColumn} (${sortDirection})`);
+      if (sortColumn === column) sortDirection = sortDirection === "asc" ? "desc" : "asc";
+      else { sortColumn = column; sortDirection = "asc"; }
       currentPage = 1;
       loadData(currentPage);
     });
   });
 
-  // Delegação de eventos para botões de edição
+  // Edição de linhas
   tbody.addEventListener("click", (e) => {
     if (e.target.classList.contains("btn-edit")) {
       const btn = e.target;
       const tr = btn.closest("tr");
       const select = tr.querySelector("select[name='PGTO']");
       const dateInput = tr.querySelector("input[name='DATPGTO']");
-      const orderId = btn.dataset.id;
+      const id_pk = btn.dataset.id;
 
       if (select.disabled) {
         select.disabled = false;
@@ -396,11 +345,11 @@ document.addEventListener("DOMContentLoaded", () => {
         tr.classList.remove("modified");
         btn.textContent = "Editar";
 
-        const original = originalData.find((r) => r.order_id === orderId);
+        const original = originalData.find((r) => r.id_pk === id_pk);
         if (original) {
           select.value = original.PGTO || "";
           dateInput.value = original.DATPGTO || "";
-          const row = tableData.find((r) => r.order_id === orderId);
+          const row = tableData.find((r) => r.id_pk === id_pk);
           if (row) {
             row.PGTO = original.PGTO;
             row.DATPGTO = original.DATPGTO;
@@ -410,17 +359,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Delegação de eventos para selects e inputs de data
+  // Atualização de selects e inputs
   tbody.addEventListener("change", (e) => {
     if (e.target.matches("select[name='PGTO'], input[name='DATPGTO']")) {
       const id = e.target.dataset.id;
       const name = e.target.name;
       const value = e.target.value;
-      const row = tableData.find((r) => r.order_id === id);
-      if (row) {
-        row[name] = value;
-        console.log(`✏️ Campo alterado: ${name} = ${value} (ID: ${id})`);
-      }
+      const row = tableData.find((r) => r.id_pk === id);
+      if (row) row[name] = value;
     }
   });
 });

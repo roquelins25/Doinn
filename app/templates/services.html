@@ -1,283 +1,165 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard Pagamentos</title>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Pagamentos</title>
 
-    <!-- Tailwind + Ícones -->
-    <link href="https://fonts.googleapis.com" rel="preconnect" />
-    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/custom-dashboard.css') }}"
-    />
-
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script>
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              primary: "#13a4ec",
-              success: "#16a34a",
-              warning: "#f59e0b",
-              danger: "#dc2626",
-              info: "#3b82f6",
-              "background-light": "#f6f7f8",
-              "background-dark": "#101c22",
-            },
-            fontFamily: { display: ["Inter"] },
+  <!-- Tailwind + Ícones -->
+  <link href="https://fonts.googleapis.com" rel="preconnect" />
+  <link crossorigin href="https://fonts.gstatic.com" rel="preconnect" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#13a4ec",
+            success: "#16a34a",
+            warning: "#f59e0b",
+            danger: "#dc2626",
+            info: "#3b82f6",
+            "background-light": "#f6f7f8",
+            "background-dark": "#101c22",
           },
+          fontFamily: { display: ["Inter"] },
         },
-      };
-    </script>
+      },
+    };
+  </script>
 
-    <!-- CSS principal -->
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/custom-dashboard.css') }}"
-    />
+  <!-- CSS custom -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom-dashboard.css') }}" />
 
-    <!-- CSS específico (somente o necessário) -->
-    <style>
-      /* 🔹 Tooltip nativo */
-      #dataTable td[title]:hover::after {
-        content: attr(title);
-        position: absolute;
-        background: rgba(0, 0, 0, 0.8);
-        color: #fff;
-        font-size: 12px;
-        padding: 6px 8px;
-        border-radius: 4px;
-        top: -30px;
-        white-space: normal;
-        z-index: 1000;
-        max-width: 300px;
-      }
+  <style>
+    /* Tooltip nativo */
+    #dataTable td[title]:hover::after {
+      content: attr(title);
+      position: absolute;
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      font-size: 12px;
+      padding: 6px 8px;
+      border-radius: 4px;
+      top: -30px;
+      white-space: normal;
+      z-index: 1000;
+      max-width: 300px;
+    }
+    /* Botões de ação */
+    .btn-action { background: #13a4ec; color: white; border-radius: 6px; font-size: 12px; font-weight: 600; padding: 4px 10px; transition: 0.2s; }
+    .btn-action:hover { background: #0f8dc9; }
+    /* Badges */
+    .badge { padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+    .badge-paid { background-color: #16a34a; color:white; }
+    .badge-pending { background-color: #f59e0b; color:white; }
+    .badge-canceled { background-color: #dc2626; color:white; }
+    .badge-confirmed { background-color: #3b82f6; color:white; }
+  </style>
+</head>
 
-      /* 🔹 Botões de ação */
-      .btn-action {
-        background: #13a4ec;
-        color: white;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 600;
-        padding: 4px 10px;
-        transition: 0.2s;
-      }
-      .btn-action:hover {
-        background: #0f8dc9;
-      }
-    </style>
-  </head>
+<body class="font-display bg-background-light dark:bg-background-dark">
+  <div class="flex flex-col min-h-screen">
 
-  <body class="font-display bg-background-light dark:bg-background-dark">
-    <div class="flex flex-col min-h-screen">
-      <!-- Header -->
-      <header
-        class="flex items-center justify-between px-6 py-4 border-b bg-white dark:bg-background-dark border-primary/20 dark:border-primary/30 shadow-sm"
-      >
-        <div class="flex items-center gap-3">
-          <div class="text-primary size-6">
-            <svg
-              fill="none"
-              viewBox="0 0 48 48"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z"
-                fill="currentColor"
-              ></path>
-            </svg>
+    <!-- Header -->
+    <header class="flex items-center justify-between px-6 py-4 border-b bg-white dark:bg-background-dark border-primary/20 dark:border-primary/30 shadow-sm">
+      <div class="flex items-center gap-3">
+        <div class="text-primary size-6">
+          <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" fill="currentColor"></path>
+          </svg>
+        </div>
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Controle de Pagamentos</h1>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <button id="saveButton" class="btn-action">Salvar Alterações</button>
+        <button id="printButton" class="btn-action">Imprimir</button>
+        <a href="{{ url_for('main.logout') }}" class="btn-action">Sair</a>
+        <div id="alertBox" class="text-sm"></div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="flex-grow p-6 lg:p-10">
+      <div class="mx-auto dashboard active" id="dashboard">
+
+        <!-- Filtros -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6 overflow-x-auto">
+          <div class="flex flex-nowrap items-center gap-3 min-w-max">
+            <input type="date" id="startDate" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm" />
+            <input type="date" id="endDate" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm" />
+            <select id="statusFilter" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm">
+              <option value="">Todos Status</option>
+              <option value="Sim">Sim</option>
+              <option value="Não">Não</option>
+              <option value="Cancelado">Cancelado</option>
+              <option value="Pendente">Pendente</option>
+            </select>
+            <input type="text" id="employeeFilter" placeholder="Filtrar Funcionário" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm" />
+            <input type="text" id="serviceFilter" placeholder="Filtrar Serviço" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm" />
           </div>
-          <h1 class="text-xl font-bold text-gray-900 dark:text-white">
-            Controle de Pagamentos
-          </h1>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3">
-          <button id="saveButton" class="btn-save">Salvar Alterações</button>
-          <button id="printButton" class="btn-save">Imprimir</button>
-          <a href="{{ url_for('main.logout') }}" class="btn-logout">Sair</a>
-
-          <div id="alertBox" class="text-sm"></div>
-        </div>
-      </header>
-
-      <!-- Main -->
-      <main class="flex-grow p-6 lg:p-10">
-        <div class="mx-auto dashboard active" id="dashboard">
-          <!-- Filtros -->
-          <div
-            class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6 overflow-x-auto"
-          >
-            <div class="flex flex-nowrap items-center gap-3 min-w-max">
-              <input
-                type="date"
-                id="startDate"
-                class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm"
-              />
-              <input
-                type="date"
-                id="endDate"
-                class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm"
-              />
-              <select
-                id="statusFilter"
-                class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm"
-              >
-                <option value="">Todos Status</option>
-                <option value="Sim">Sim</option>
-                <option value="Não">Não</option>
-                <option value="Cancelado">Cancelado</option>
-                <option value="Pendente">Pendente</option>
-              </select>
-              <input
-                type="text"
-                id="employeeFilter"
-                placeholder="Filtrar Funcionário"
-                class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm"
-              />
-              <input
-                type="text"
-                id="serviceFilter"
-                placeholder="Filtrar Serviço"
-                class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm"
-              />
+        <!-- Totais -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-6" id="cardsTotais">
+          <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-center justify-between">
+            <div>
+              <p class="text-gray-500 text-sm font-medium">Total Bruto</p>
+              <h2 id="totalBruto" class="text-2xl font-bold text-gray-900 dark:text-white">R$ 0,00</h2>
             </div>
+            <span class="material-symbols-outlined text-primary text-4xl bg-primary/10 p-3 rounded-full">payments</span>
           </div>
-
-          <!-- Loading -->
-          <div
+          <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-center justify-between">
+            <div>
+              <p class="text-gray-500 text-sm font-medium">Quantidade de Registros</p>
+              <h2 id="quantidadeRegistros" class="text-2xl font-bold text-gray-900 dark:text-white">0</h2>
+            </div>
+            <span class="material-symbols-outlined text-success text-4xl bg-success/10 p-3 rounded-full">checklist</span>
+          </div>
+        </div>
+        <!-- Loading -->
+        <div
             id="loading"
             class="text-center text-gray-500 dark:text-gray-300 mb-4 hidden"
-          >
+        >
             Carregando dados...
-          </div>
-          <!-- Cards de Totais -->
-          <div
-            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-6"
-            id="cardsTotais"
-          >
-            <!-- Card Total Bruto -->
-            <div
-              class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-center justify-between"
-            >
-              <div>
-                <p class="text-gray-500 text-sm font-medium">Total Bruto</p>
-                <h2
-                  id="totalBruto"
-                  class="text-2xl font-bold text-gray-900 dark:text-white"
-                >
-                  R$ 0,00
-                </h2>
-              </div>
-              <span
-                class="material-symbols-outlined text-primary text-4xl bg-primary/10 p-3 rounded-full"
-              >
-                payments
-              </span>
-            </div>
-
-            <!-- Card Quantidade de Registros -->
-            <div
-              class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-center justify-between"
-            >
-              <div>
-                <p class="text-gray-500 text-sm font-medium">
-                  Quantidade de Registros
-                </p>
-                <h2
-                  id="quantidadeRegistros"
-                  class="text-2xl font-bold text-gray-900 dark:text-white"
-                >
-                  0
-                </h2>
-              </div>
-              <span
-                class="material-symbols-outlined text-success text-4xl bg-success/10 p-3 rounded-full"
-              >
-                checklist
-              </span>
-            </div>
-          </div>
-          <!-- Tabela -->
-          <div
-            class="table-container bg-white dark:bg-gray-800 rounded-lg shadow"
-          >
-            <table id="dataTable" class="w-full text-sm text-left hidden">
-              <thead
-                class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"
-              >
-                <tr>
-                  <th class="px-4 py-3 text-center">Ações</th>
-                  <th class="px-4 py-3" data-column="PGTO">Status Pagamento</th>
-                  <th class="px-4 py-3" data-column="DATPGTO">
-                    Data Pagamento
-                  </th>
-                  <th class="px-4 py-3" data-column="order_id">Order ID</th>
-                  <th class="px-4 py-3 text-right" data-column="gross_total">
-                    Total Bruto
-                  </th>
-                  <th class="px-4 py-3" data-column="employees">Funcionário</th>
-                  <th class="px-4 py-3" data-column="schedule_date">
-                    Data Agendada
-                  </th>
-                  <th class="px-4 py-3" data-column="space_name">Espaço</th>
-                  <th class="px-4 py-3" data-column="service_name">Serviço</th>
-                  <th class="px-4 py-3" data-column="stay_external">Externo</th>
-                  <th class="px-4 py-3" data-column="service_status">Status</th>
-                </tr>
-              </thead>
-              <tbody id="tableBody"></tbody>
-            </table>
-          </div>
-
-          <!-- Paginação -->
-          <div id="pagination" class="pagination mt-4"></div>
         </div>
-      </main>
-    </div>
 
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+        <!-- Tabela -->
+        <div class="table-container bg-white dark:bg-gray-800 rounded-lg shadow">
+          <table id="dataTable" class="w-full text-sm text-left">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+              <tr>
+                <th class="px-4 py-3 text-center">Ações</th>
+                <th class="px-4 py-3" data-column="PGTO">Status Pagamento</th>
+                <th class="px-4 py-3" data-column="DATPGTO">Data Pagamento</th>
+                <th class="px-4 py-3" data-column="order_id">Order ID</th>
+                <th class="px-4 py-3 text-right" data-column="gross_total">Total Bruto</th>
+                <th class="px-4 py-3" data-column="employees">Funcionário</th>
+                <th class="px-4 py-3" data-column="schedule_date">Data Agendada</th>
+                <th class="px-4 py-3" data-column="space_name">Espaço</th>
+                <th class="px-4 py-3" data-column="service_name">Serviço</th>
+                <th class="px-4 py-3" data-column="stay_external">Externo</th>
+                <th class="px-4 py-3" data-column="service_status">Status</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
 
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const observer = new MutationObserver(() => {
-          document.querySelectorAll("#dataTable td").forEach((td) => {
-            const text = td.textContent.trim();
-            td.setAttribute("title", text);
+        <!-- Paginação -->
+        <div id="pagination" class="pagination mt-4"></div>
 
-            const lower = text.toLowerCase();
-            if (["sim", "pago", "paid"].includes(lower))
-              td.innerHTML = `<span class="badge badge-paid">${text}</span>`;
-            else if (["pendente", "não", "pending"].includes(lower))
-              td.innerHTML = `<span class="badge badge-pending">${text}</span>`;
-            else if (["cancelado", "canceled"].includes(lower))
-              td.innerHTML = `<span class="badge badge-canceled">${text}</span>`;
-            else if (["confirmado", "confirmed"].includes(lower))
-              td.innerHTML = `<span class="badge badge-confirmed">${text}</span>`;
-          });
-        });
-        observer.observe(document.getElementById("tableBody"), {
-          childList: true,
-          subtree: true,
-        });
-      });
-    </script>
-  </body>
+      </div>
+    </main>
+  </div>
+
+  <!-- JS -->
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
 </html>
