@@ -88,22 +88,34 @@
     <main class="flex-grow p-6 lg:p-10">
       <div class="mx-auto dashboard active" id="dashboard">
 
-        <!-- Filtros -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6 overflow-x-auto">
-          <div class="flex flex-nowrap items-center gap-3 min-w-max">
-            <input type="date" id="startDate" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm" />
-            <input type="date" id="endDate" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm" />
-            <select id="statusFilter" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm">
-              <option value="">Todos Status</option>
-              <option value="Sim">Sim</option>
-              <option value="Não">Não</option>
-              <option value="Cancelado">Cancelado</option>
-              <option value="Pendente">Pendente</option>
-            </select>
-            <input type="text" id="employeeFilter" placeholder="Filtrar Funcionário" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm" />
-            <input type="text" id="serviceFilter" placeholder="Filtrar Serviço" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm" />
+
+          <!-- Filtros -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6 overflow-x-auto">
+            <div class="flex flex-nowrap items-center justify-center gap-6 min-w-max">
+              <input type="date" id="startDate" class="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base min-w-[180px]" />
+              <input type="date" id="endDate" class="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base min-w-[180px]" />
+
+              <select id="statusFilter" class="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base min-w-[160px]">
+                <option value="">Todos Status</option>
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+                <option value="Cancelado">Cancelado</option>
+                <option value="Pendente">Pendente</option>
+              </select>
+
+              <select id="statusFilterdoinn" class="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base min-w-[160px]">
+                <option value="">Todos Status</option>
+                <option value="scheduled">scheduled</option>
+                <option value="done">done</option>
+                <option value="canceled">canceled</option>
+                <option value="started">started</option>
+              </select>
+
+              <input type="text" id="employeeFilter" placeholder="Filtrar Funcionário" class="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base min-w-[200px]" />
+              <input type="text" id="serviceFilter" placeholder="Filtrar Serviço" class="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base min-w-[200px]" />
+            </div>
           </div>
-        </div>
+
 
         <!-- Totais -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-6" id="cardsTotais">

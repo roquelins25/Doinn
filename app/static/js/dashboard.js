@@ -8,6 +8,7 @@ const alertBox = document.getElementById("alertBox");
 const startDateInput = document.getElementById("startDate");
 const endDateInput = document.getElementById("endDate");
 const statusFilter = document.getElementById("statusFilter");
+const statusFilterdoinng = document.getElementById("statusFilterdoinn");
 const employeeFilter = document.getElementById("employeeFilter");
 const serviceFilter = document.getElementById("serviceFilter");
 const pagination = document.getElementById("pagination");
@@ -41,6 +42,7 @@ async function loadTotals() {
       start_date: startDateInput.value || "",
       end_date: endDateInput.value || "",
       status: statusFilter.value || "",
+      statusdoinn: statusFilterdoinng.value || "",
       employee: employeeFilter.value || "",
       service: serviceFilter.value || "",
     });
@@ -80,6 +82,7 @@ async function loadData(page = 1) {
       start_date: startDateInput.value || "",
       end_date: endDateInput.value || "",
       status: statusFilter.value || "",
+      statusdoinn: statusFilterdoinng.value || "",
       employee: employeeFilter.value || "",
       service: serviceFilter.value || "",
       order_by: sortColumn,
@@ -235,7 +238,7 @@ function updateSortIcons() {
 }
 
 // --- Filtros ---
-[startDateInput, endDateInput, statusFilter, employeeFilter, serviceFilter].forEach((el) => {
+[startDateInput, endDateInput, statusFilter,statusFilterdoinng, employeeFilter, serviceFilter].forEach((el) => {
   el.addEventListener("input", () => {
     currentPage = 1;
     loadData(1);
@@ -297,6 +300,7 @@ if (printButton) {
       start_date: startDateInput.value || "",
       end_date: endDateInput.value || "",
       status: statusFilter.value || "",
+      statusdoinn: statusFilterdoinng.value || "",
       employee: employeeFilter.value || "",
       service: serviceFilter.value || "",
     });
