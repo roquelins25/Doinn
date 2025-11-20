@@ -190,4 +190,4 @@ def imprimir():
 
     total_bruto = sum(float(row.get("gross_total") or 0) for row in pagamentos)
 
-    return render_template("imprimir.html", pagamentos=pagamentos, total_bruto=total_bruto)
+    return render_template("imprimir.html", pagamentos=pagamentos, total_bruto=total_bruto, start_date=start_date, end_date=end_date)

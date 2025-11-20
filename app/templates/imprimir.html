@@ -22,6 +22,17 @@
           <div class="titulo">
             <h1>Relatório de Pagamentos</h1>
             <span id="dataAtual"></span>
+              <span id="datafiltro">
+              {% if start_date and end_date %}
+                Período: {{ start_date }} até {{ end_date }}
+              {% elif start_date %}
+                A partir de: {{ start_date }}
+              {% elif end_date %}
+                Até: {{ end_date }}
+              {% else %}
+                Todos os períodos
+              {% endif %}
+            </span>
           </div>
         </div>
       </header>
