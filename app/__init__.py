@@ -10,5 +10,4 @@ def create_app():
 
     app.secret_key = 'brs@2025'
     app.register_blueprint(main)
-
     return app

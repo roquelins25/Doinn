@@ -117,18 +117,19 @@ def update_services():
     errors = []
 
     for row in updates:
-        order_id = row.get("order_id")
-        if not order_id:
-            errors.append({"row": row, "error": "order_id ausente"})
+        id_pk = row.get("id_pk")
+        if not id_pk:
+            errors.append({"row": row, "error": "id_pk ausente"})
             continue
         try:
             supabase.table("services").update({
                 "PGTO": row.get("PGTO"),
                 "DATPGTO": row.get("DATPGTO") or None
-            }).eq("order_id", order_id).execute()
+            }).eq("id_pk", id_pk).execute()
             updated_count += 1
         except Exception as e:
-            errors.append({"order_id": order_id, "error": str(e)})
+            errors.append({"id_pk": id_pk, "error": str(e)})
+
 
     resp = {"message": "Atualizações processadas", "updated": updated_count}
     if errors:
