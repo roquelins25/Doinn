@@ -61,7 +61,7 @@ def dashboard():
 @main.route("/api/services", methods=["GET"])
 def get_services():
     page = int(request.args.get("page", 1))
-    limit = int(request.args.get("limit", 50))
+    limit = int(request.args.get("limit", 150))
     offset = (page - 1) * limit
 
     start_date = request.args.get("start_date")
@@ -148,15 +148,26 @@ def get_totals():
     service = request.args.get("service")
 
     try:
-        query = supabase.table("services").select("gross_total", count="exact")
-        query = query.neq("gross_total", 0).not_.is_("gross_total", None)
-        query = apply_filters(query, start_date, end_date, status, statusdoinn, employee, service)
+        PAGE_SIZE = 1000
+        all_data = []
+        offset = 0
 
-        result = query.execute()
-        data = result.data or []
+        while True:
+            query = supabase.table("services").select("gross_total", count="exact")
+            query = query.neq("gross_total", 0).not_.is_("gross_total", None)
+            query = apply_filters(query, start_date, end_date, status, statusdoinn, employee, service)
+            result = query.range(offset, offset + PAGE_SIZE - 1).execute()
 
-        total_bruto = sum(float(row.get("gross_total") or 0) for row in data)
-        total_count = result.count or len(data)
+            batch = result.data or []
+            all_data.extend(batch)
+
+            if len(batch) < PAGE_SIZE:
+                total_count = result.count if result.count is not None else len(all_data)
+                break
+
+            offset += PAGE_SIZE
+
+        total_bruto = sum(float(row.get("gross_total") or 0) for row in all_data)
 
         return jsonify({
             "gross_total_sum": total_bruto,
