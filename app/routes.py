@@ -4,12 +4,16 @@ from .models.sup_client import supabase
 main = Blueprint("main", __name__)
 
 # --- Função auxiliar para aplicar filtros ---
-def apply_filters(query, start_date=None, end_date=None, status=None,statusdoinn=None, employee=None, service=None):
+ALLOWED_DATE_FIELDS = {"schedule_date", "DATPGTO"}
+
+def apply_filters(query, start_date=None, end_date=None, status=None, statusdoinn=None, employee=None, service=None, date_field="schedule_date"):
     """Aplica filtros opcionais a uma consulta Supabase."""
+    if date_field not in ALLOWED_DATE_FIELDS:
+        date_field = "schedule_date"
     if start_date:
-        query = query.gte("schedule_date", start_date)
+        query = query.gte(date_field, start_date)
     if end_date:
-        query = query.lte("schedule_date", end_date)
+        query = query.lte(date_field, end_date)
 
     if status:
         if status == "Pendente":
@@ -70,6 +74,7 @@ def get_services():
     statusdoinn = request.args.get("statusdoinn")
     employee = request.args.get("employee")
     service = request.args.get("service")
+    date_field = request.args.get("date_field", "schedule_date")
 
     order_by = request.args.get("order_by", "schedule_date")
     order_dir = request.args.get("order_dir", "asc").lower()
@@ -88,12 +93,12 @@ def get_services():
             "id_pk,order_id,PGTO,DATPGTO,gross_total,employees,schedule_date,space_name,service_name,stay_external,service_status"
         )
         data_query = data_query.neq("gross_total", 0).not_.is_("gross_total", None)
-        data_query = apply_filters(data_query, start_date, end_date, status, statusdoinn, employee, service)
+        data_query = apply_filters(data_query, start_date, end_date, status, statusdoinn, employee, service, date_field)
         data_query = data_query.order(order_by, desc=desc_order)
 
         count_query = supabase.table("services").select("*", count="exact")
         count_query = count_query.neq("gross_total", 0).not_.is_("gross_total", None)
-        count_query = apply_filters(count_query, start_date, end_date, status, statusdoinn, employee, service)
+        count_query = apply_filters(count_query, start_date, end_date, status, statusdoinn, employee, service, date_field)
 
         data_result = data_query.range(offset, offset + limit - 1).execute()
         data = data_result.data or []
@@ -146,6 +151,7 @@ def get_totals():
     statusdoinn = request.args.get("statusdoinn")
     employee = request.args.get("employee")
     service = request.args.get("service")
+    date_field = request.args.get("date_field", "schedule_date")
 
     try:
         PAGE_SIZE = 1000
@@ -155,7 +161,7 @@ def get_totals():
         while True:
             query = supabase.table("services").select("gross_total", count="exact")
             query = query.neq("gross_total", 0).not_.is_("gross_total", None)
-            query = apply_filters(query, start_date, end_date, status, statusdoinn, employee, service)
+            query = apply_filters(query, start_date, end_date, status, statusdoinn, employee, service, date_field)
             result = query.range(offset, offset + PAGE_SIZE - 1).execute()
 
             batch = result.data or []
@@ -192,11 +198,12 @@ def imprimir():
     statusdoinn = request.args.get("statusdoinn")
     employee = request.args.get("employee")
     service = request.args.get("service")
+    date_field = request.args.get("date_field", "schedule_date")
 
     query = supabase.table("services").select(
         "employees, service_name, space_name, service_status, schedule_date, gross_total, PGTO"
     ).gt("gross_total", 0)
-    query = apply_filters(query, start_date, end_date, status, statusdoinn, employee, service)
+    query = apply_filters(query, start_date, end_date, status, statusdoinn, employee, service, date_field)
     result = query.execute()
     pagamentos = result.data or []
 

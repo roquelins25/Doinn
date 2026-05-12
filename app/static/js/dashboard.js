@@ -26,6 +26,7 @@ const rowsPerPage = 30;
 let totalRecords = 0;
 let sortColumn = "schedule_date";
 let sortDirection = "asc";
+let dateField = "schedule_date";
 
 // --- Funções utilitárias ---
 function showAlert(message, type = "error") {
@@ -45,6 +46,7 @@ async function loadTotals() {
       statusdoinn: statusFilterdoinng.value || "",
       employee: employeeFilter.value || "",
       service: serviceFilter.value || "",
+      date_field: dateField,
     });
 
     const response = await fetch(`/api/totais?${params.toString()}`);
@@ -87,6 +89,7 @@ async function loadData(page = 1) {
       service: serviceFilter.value || "",
       order_by: sortColumn,
       order_dir: sortDirection,
+      date_field: dateField,
     });
 
     const response = await fetch(`${API_URL}?${params.toString()}`);
@@ -303,6 +306,7 @@ if (printButton) {
       statusdoinn: statusFilterdoinng.value || "",
       employee: employeeFilter.value || "",
       service: serviceFilter.value || "",
+      date_field: dateField,
     });
 
     // Abre em uma nova aba a rota de impressão
@@ -315,6 +319,22 @@ if (printButton) {
 document.addEventListener("DOMContentLoaded", () => {
   loadData(1);
   loadTotals();
+
+  // Slicer tipo de data
+  document.querySelectorAll(".slicer-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".slicer-btn").forEach((b) => {
+        b.classList.remove("active", "bg-primary", "text-white");
+        b.classList.add("bg-white", "dark:bg-gray-700", "text-gray-700", "dark:text-gray-200");
+      });
+      btn.classList.add("active", "bg-primary", "text-white");
+      btn.classList.remove("bg-white", "dark:bg-gray-700", "text-gray-700", "dark:text-gray-200");
+      dateField = btn.dataset.field;
+      currentPage = 1;
+      loadData(1);
+      loadTotals();
+    });
+  });
 
   // Ordenação por cabeçalho
   document.querySelectorAll("#dataTable thead th").forEach((th) => {
